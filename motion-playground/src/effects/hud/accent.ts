@@ -13,6 +13,12 @@ export const ACCENT_VAR: Record<string, string> = {
   orange: "var(--hud-orange)",
 };
 
+/** 精修版卡逐帧算色要用的色值(和 hud.css 暗底令牌一致);旧值同样落到蓝 */
+export const ACCENT_SWATCH: Record<string, string> = {
+  pink: "#5fa0fa", blue: "#5fa0fa", teal: "#5fa0fa", violet: "#5fa0fa",
+  lav: "#5fa0fa", alert: "#e88686", green: "#5fa0fa", orange: "#f0a24f",
+};
+
 /** 参数面板里"强调色"下拉的通用选项。
     语义制配色:观众能从颜色读出含义 —
     蓝=数据/里程碑 绿=达成/允许/已验证 红=否定/禁止 橙=转变/优先级 紫=引用/提问 */
