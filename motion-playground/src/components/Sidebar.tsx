@@ -6,7 +6,7 @@ import { EFFECT_GROUPS, EFFECTS } from "../effects/registry";
 
 /* 效果库最上面的展示栏:这几张换成了 Opus 5.5 精修动效。只在界面里多列一遍,
    不进 EFFECT_GROUPS —— 说明书按 EFFECT_GROUPS 的用途分组生成,AI 靠它挑卡 */
-const OPUS_IDS = ["rank-bars", "versus-card", "quote-lockup", "checklist", "blur-text"];
+const OPUS_IDS = ["rank-bars", "odometer", "versus-card", "quote-lockup", "checklist", "blur-text"];
 const LIB_GROUPS = [
   { title: "Opus 精修动效卡", effects: OPUS_IDS.map((id) => EFFECTS.find((e) => e.id === id)!).filter(Boolean) },
   ...EFFECT_GROUPS,
