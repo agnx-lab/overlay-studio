@@ -2,7 +2,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { uploadErrText } from "../uploadErr";
 import type { EffectDef, VisualTag } from "../effects/types";
 import { VISUAL_TAGS } from "../effects/types";
-import { EFFECT_GROUPS } from "../effects/registry";
+import { EFFECT_GROUPS, EFFECTS } from "../effects/registry";
+
+/* 效果库最上面的展示栏:这几张换成了 Opus 5.5 精修动效。只在界面里多列一遍,
+   不进 EFFECT_GROUPS —— 说明书按 EFFECT_GROUPS 的用途分组生成,AI 靠它挑卡 */
+const OPUS_IDS = ["rank-bars", "versus-card", "quote-lockup", "checklist", "blur-text"];
+const LIB_GROUPS = [
+  { title: "Opus 精修动效卡", effects: OPUS_IDS.map((id) => EFFECTS.find((e) => e.id === id)!).filter(Boolean) },
+  ...EFFECT_GROUPS,
+];
 import { PROMO_URL } from "../promo";
 import { kindColor } from "../effects/kindColor";
 import type { OverlayDoc } from "../overlay/types";
@@ -122,7 +130,7 @@ export function Sidebar({
       // 名字和描述里未必出现这些词(见 types.ts 的 VISUAL_TAGS)
       (e.tags ?? []).some((t) => t.toLowerCase().includes(kw));
     // 组名命中 = 整组保留;否则按卡过滤
-    return EFFECT_GROUPS.map((g) => ({
+    return LIB_GROUPS.map((g) => ({
       ...g,
       effects: kw && g.title.toLowerCase().includes(kw) ? g.effects : g.effects.filter(hit),
     })).filter((g) => g.effects.length > 0);
@@ -135,7 +143,7 @@ export function Sidebar({
     const inLib = tab === "library";
     if (!inLib && view !== "cards") return;
     const ids = inLib
-      ? fxGroups.flatMap((g) => g.effects.map((x) => x.id))
+      ? [...new Set(fxGroups.flatMap((g) => g.effects.map((x) => x.id)))] // 展示栏的卡在原分组里也有,去重
       : (overlay?.cards ?? []).map((c) => c.id);
     if (ids.length === 0) return;
     const curId = inLib ? selectedId : selCardId;
