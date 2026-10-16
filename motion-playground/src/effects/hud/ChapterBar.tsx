@@ -1,7 +1,6 @@
-import type { EffectDef, EffectProps } from "../types";
-import { useEnter } from "../useAnimation";
-import { useTimelineTime } from "./useTimelineTime";
-import { ACCENT_OPTIONS, ACCENT_VAR, THEME_OPTIONS } from "./accent";
+import type { EffectDef } from "../types";
+import { ChapterBarPlate } from "./ChapterBarPlate";
+import { ACCENT_OPTIONS, OFFSET_CONTROLS, OFFSET_DEFAULTS, THEME_OPTIONS } from "./accent";
 
 export interface ChapterBarParams {
   theme: "dark" | "light";
@@ -16,30 +15,15 @@ export interface ChapterBarParams {
   progAccent?: string;
   /** 进度色透明度(0.1-1,只要跟底色分得开就行) */
   progAlpha?: number;
+  /** 隐藏时段(时间轴绝对秒,如 "119.11-139.064",多段用 | 分隔):到点淡出,进度照常在后台走 */
+  hideAt?: string;
+  offsetX?: number;
+  offsetY?: number;
   /** 编辑台/导出注入:时间轴当前秒 */
   __t?: number;
   /** 编辑台/导出注入:本卡结束秒(最后一章的进度终点) */
   __end?: number;
-}
-
-interface Chapter {
-  label: string;
-  start: number;
-}
-
-/** "引入 0 | 变现问题 17" → [{label, start}],按 start 升序 */
-function parseChapters(raw: string): Chapter[] {
-  return raw
-    .split("|")
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .map((seg) => {
-      const m = seg.match(/^(.*?)\s+([\d.]+)$/);
-      return m
-        ? { label: m[1].trim(), start: parseFloat(m[2]) }
-        : { label: seg, start: 0 };
-    })
-    .sort((a, b) => a.start - b.start);
+  __start?: number;
 }
 
 /**
@@ -47,48 +31,8 @@ function parseChapters(raw: string): Chapter[] {
  * 当前章节高亮 + 章内进度线,讲到哪一章观众随时知道。
  * 用法:一张卡从 0 拉到视频结尾,章节表按你的稿子分段填。
  */
-function ChapterBar({ params, playToken }: EffectProps<ChapterBarParams>) {
-  const { chapters, accent, showProgress, progMode, progAccent, progAlpha } = params;
-  const entered = useEnter(playToken);
-  const t = useTimelineTime(params, playToken);
-  const items = parseChapters(chapters);
-  if (!items.length) return null;
-
-  // 当前章 = 最后一个 start <= t 的章节
-  let active = 0;
-  for (let i = 0; i < items.length; i++) if (t >= items[i].start) active = i;
-  // 章内进度:本章 start → 下一章 start(最后一章用卡片结束时间兜底)
-  const cs = items[active].start;
-  const ce = items[active + 1]?.start ?? params.__end ?? cs + 30;
-  const pct = Math.min(1, Math.max(0, (t - cs) / Math.max(ce - cs, 0.1)));
-  // 整条进度 = 已讲完的章(整格) + 当前章内进度(半格),所以颜色是一路往右推的
-  const fill = ((active + pct) / items.length) * 100;
-  const isFill = (progMode ?? "fill") === "fill";
-
-  return (
-    <div
-      className={`hud cbar ${entered ? "is-in" : ""}`}
-      style={{
-        ["--hud-acc" as string]: ACCENT_VAR[accent],
-        ["--cbar-prog" as string]: ACCENT_VAR[progAccent || accent],
-        ["--cbar-alpha" as string]: `${Math.round((progAlpha ?? 0.25) * 100)}%`,
-      }}
-    >
-      {showProgress && isFill && <i className="cbar-fill" style={{ width: `${fill}%` }} />}
-      {items.map((c, i) => (
-        <span
-          key={i}
-          className={`cbar-item ${i === active ? "is-on" : ""} ${i < active ? "is-done" : ""}`}
-        >
-          <span className="cbar-lb">{c.label}</span>
-          {i === active && showProgress && !isFill && (
-            <i className="cbar-prog" style={{ width: `${pct * 100}%` }} />
-          )}
-        </span>
-      ))}
-    </div>
-  );
-}
+/** 公开版:直接用精修版动效(完整版里是醒目开垫底板时才换上) */
+const ChapterBar = ChapterBarPlate;
 
 export const chapterBarDef: EffectDef<ChapterBarParams> = {
   id: "chapter-bar",
@@ -104,6 +48,8 @@ export const chapterBarDef: EffectDef<ChapterBarParams> = {
     progMode: "fill",
     progAccent: "",
     progAlpha: 0.25,
+    hideAt: "",
+    ...OFFSET_DEFAULTS,
   },
   controls: [
     { key: "theme", label: "底色(此卡独立生效)", type: "select", options: THEME_OPTIONS },
@@ -126,6 +72,8 @@ export const chapterBarDef: EffectDef<ChapterBarParams> = {
       options: [{ label: "跟随强调色", value: "" }, ...ACCENT_OPTIONS],
     },
     { key: "progAlpha", label: "进度色透明度", type: "range", min: 0.1, max: 1, step: 0.05 },
+    { key: "hideAt", label: "隐藏时段(绝对秒,如 119.11-139.064;多段用 | 分隔)", type: "text" },
+    ...OFFSET_CONTROLS,
   ],
   Component: ChapterBar,
 };

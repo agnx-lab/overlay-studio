@@ -8,7 +8,7 @@
     "file": "src/effects/hud/CaptionTrack.tsx"
   },
   "chapter-bar": {
-    "hash": "45de8220b2f7",
+    "hash": "90f87b7ecbe9",
     "file": "src/effects/hud/ChapterBar.tsx"
   },
   "checklist": {
@@ -32,7 +32,7 @@
     "file": "src/effects/hud/Odometer.tsx"
   },
   "pin-board": {
-    "hash": "45d3a1cf4663",
+    "hash": "a0a83bc8caaf",
     "file": "src/effects/hud/PinBoard.tsx"
   },
   "punch-pill": {
