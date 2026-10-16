@@ -992,3 +992,14 @@
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
+
+/* ============ 呼吸层(effects/breath.tsx) ============
+   放在 hud.css 而不是组件里 import:卡片代码也会被 Node 脚本加载,那边读不了 .css。
+   JS 每帧写 --br-* 变量,这里落到独立的 translate / rotate 属性上,不碰各卡自己的 transform。 */
+.fx-breath :is([data-fx-role="group"],[data-fx-role="item"],[data-fx-role="icon"],[data-fx-role="frame"],[data-fx-role="label"],[data-fx-role="excerpt"],[data-fx-role="warning"]) {
+  translate: var(--br-x, 0px) var(--br-y, 0px);
+}
+.fx-breath [data-br-root] {
+  translate: calc(var(--br-hx, 0px) + var(--br-x, 0px)) calc(var(--br-hy, 0px) + var(--br-y, 0px));
+  rotate: var(--br-hr, 0deg);
+}

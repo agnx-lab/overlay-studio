@@ -1124,6 +1124,11 @@ export default function App() {
           pushHistory(true);
           setOverlay((o) => (o ? { ...o, glow: !o.glow } : o));
         }}
+        breath={!!overlay?.breath}
+        onToggleBreath={() => {
+          pushHistory(true);
+          setOverlay((o) => (o ? { ...o, breath: o.breath ? undefined : true } : o));
+        }}
         inkColor={overlay?.inkColor ?? ""}
         onInkColor={(c) => {
           pushHistory(true);
@@ -1204,6 +1209,7 @@ export default function App() {
           now={curT}
           overlayTheme={overlay?.theme}
           glow={overlay?.glow ?? false}
+          breath={overlay?.breath ?? false}
           font={overlay?.font}
           inkColor={overlay?.inkColor}
           videoMuted={muted}
@@ -1239,6 +1245,7 @@ export default function App() {
         onKindChange={handleCardKindChange}
         onDelete={handleDeleteCard}
         onAddToTimeline={handleAddToTimeline}
+        globalBreath={overlay?.breath === true}
         addAt={curT}
         addSec={addSecFor(selectedId)}
       />

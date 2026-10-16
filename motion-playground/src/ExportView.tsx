@@ -1,4 +1,5 @@
 import { inkVars } from "./effects/hud/accent";
+import { BreathContext } from "./effects/breath";
 import { useEffect, useState } from "react";
 import "./fonts"; // 自定义字体注册:导出端也要有 @font-face,成片字体才和预览一致
 import { EFFECTS } from "./effects/registry";
@@ -148,6 +149,7 @@ function TimelineExport({ doc, scale, speed }: { doc: OverlayDoc; scale: number;
     );
   }
   return (
+    <BreathContext.Provider value={doc.breath === true}>
       <div
         className={`stage is-hud is-export${doc.glow ? "" : " no-glow"}`}
         data-theme={doc.theme ?? "dark"}
@@ -159,6 +161,7 @@ function TimelineExport({ doc, scale, speed }: { doc: OverlayDoc; scale: number;
       >
         {rendered}
       </div>
+    </BreathContext.Provider>
   );
 }
 

@@ -4,6 +4,7 @@ import type { Control, EffectDef } from "../effects/types";
 import { EFFECT_GROUPS } from "../effects/registry";
 import { kindColor } from "../effects/kindColor";
 import type { OverlayCard } from "../overlay/types";
+import { BREATH_STILL } from "../effects/breath";
 
 interface ParamsPanelProps {
   /** 查不到时是 undefined:编排里可能混进不认识的卡,
@@ -30,6 +31,8 @@ interface ParamsPanelProps {
   addAt?: number;
   /** 效果库模式:插入后这张卡多长(秒),同样写进文案 */
   addSec?: number;
+  /** 整片呼吸感(doc.breath):单卡「呼吸感」开关没设时跟随它 */
+  globalBreath?: boolean;
 }
 
 /** 落点文案用的 m:ss.s */
@@ -83,6 +86,9 @@ export const SFX_OPTIONS = [
   { label: "魔法闪光", value: "sparkle" },
   { label: "数字上升", value: "rise" },
 ];
+
+// 单卡盖过顶栏整片「呼吸感」:没设跟随全局,关掉就是这张卡不微动(见 effects/breath.tsx)
+const BREATH_CONTROL: Control = { key: "breath", label: "呼吸感(此卡)", type: "toggle" };
 
 const SFX_CONTROL: Control = {
   key: "sfx",
@@ -340,7 +346,24 @@ function renderControl(
   c: Control,
   params: any,
   onChange: (key: string, value: unknown) => void,
+  globalBreath = false,
 ) {
+  if (c.key === "breath") {
+    const own = params.breath as boolean | undefined;
+    return (
+      <div key={c.key}>
+        <ControlRow control={c} value={own ?? globalBreath} onChange={(v) => onChange(c.key, v)} />
+        <div className="ctrl-hint">
+          {own === undefined ? "跟随顶栏「呼吸感」" : "本卡单独设置"}
+          {own !== undefined && (
+            <button type="button" className="video-btn" onClick={() => onChange(c.key, undefined)}>
+              跟随全局
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
   if (c.key === "camSrc")
     return (
       <MediaRow
@@ -376,6 +399,7 @@ export function ParamsPanel({
   onAddToTimeline,
   addAt = 0,
   addSec = 5,
+  globalBreath = false,
 }: ParamsPanelProps) {
   // 「更换特效」搜索词(卡片越来越多,先搜再换)
   const [kindQuery, setKindQuery] = useState("");
@@ -438,6 +462,7 @@ export function ParamsPanel({
     SCALE_CONTROL,
     SPEED_CONTROL,
     SFX_CONTROL,
+    ...(card && editMode && !BREATH_STILL.has(effect.id) ? [BREATH_CONTROL] : []),
   ].filter((c) => !ownKeys.has(c.key));
   const all: Control[] = [...own, ...universal];
   const grouped = new Map<Group, Control[]>();
@@ -584,6 +609,7 @@ export function ParamsPanel({
                   c,
                   { ...params, scale: params.scale ?? 1, speed: params.speed ?? 1 },
                   onChange,
+                  globalBreath,
                 ),
               )}
             </section>

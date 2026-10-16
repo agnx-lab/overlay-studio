@@ -1,4 +1,5 @@
 import { inkVars } from "../effects/hud/accent";
+import { BreathContext } from "../effects/breath";
 import {
   useEffect,
   useLayoutEffect,
@@ -32,6 +33,8 @@ interface CanvasProps {
   overlayTheme?: "dark" | "light";
   /** 文字可读性光晕(默认关) */
   glow?: boolean;
+  /** 呼吸感(doc.breath):卡片落定后微动,见 effects/breath.tsx */
+  breath?: boolean;
   /** 全局字体(doc.font):空 = 默认 */
   font?: string;
   /** 全局文字色(doc.inkColor):盖住主题的 --hud-ink,次要文字同色降透明度 */
@@ -221,6 +224,7 @@ export function Canvas({
   now,
   overlayTheme,
   glow,
+  breath,
   font,
   inkColor,
   videoMuted,
@@ -287,6 +291,7 @@ export function Canvas({
   const pipClass = pipCard ? PIP_KINDS[pipCard.kind](pipCard.params) : "";
 
   return (
+    <BreathContext.Provider value={!!breath}>
     <div className="canvas-wrap" ref={wrapRef}>
       <div
         ref={stageRef}
@@ -473,5 +478,6 @@ export function Canvas({
             </CardShell>}
       </div>
     </div>
+    </BreathContext.Provider>
   );
 }

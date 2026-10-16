@@ -21,6 +21,7 @@ import { statProofDef } from "./hud/StatProof";
 import { growthCurveDef } from "./hud/GrowthCurve";
 import { entityChipsDef } from "./hud/EntityChips";
 import { pinBoardDef } from "./hud/PinBoard";
+import { withBreath } from "./breath";
 
 /** 按用途分组:同组内是"同一类需求的可选项",挑一张用即可 */
 export interface EffectGroup {
@@ -77,6 +78,9 @@ export const EFFECT_GROUPS: EffectGroup[] = [
     effects: [terminal3DDef],
   },
 ];
+
+// 每张卡外面套一层呼吸层(顶栏「呼吸感」打开才生效,见 breath.tsx)
+for (const g of EFFECT_GROUPS) g.effects = g.effects.map(withBreath);
 
 // 平铺列表(消费端按 id 取用;id 即 overlay JSON 的 kind)
 export const EFFECTS: EffectDef<any>[] = EFFECT_GROUPS.flatMap((g) => g.effects);

@@ -97,6 +97,8 @@ interface TopBarProps {
   onFont: (f: string) => void;
   glow: boolean;
   onToggleGlow: () => void;
+  breath: boolean;
+  onToggleBreath: () => void;
   inkColor: string;
   onInkColor: (c: string) => void;
   onUnifyAccent: (accent: string) => void;
@@ -217,6 +219,8 @@ export function TopBar({
   onFont,
   glow,
   onToggleGlow,
+  breath,
+  onToggleBreath,
   inkColor,
   onInkColor,
   onUnifyAccent,
@@ -390,6 +394,19 @@ export function TopBar({
                   role="switch"
                   aria-checked={glow}
                   onClick={onToggleGlow}
+                  disabled={!hasDoc}
+                >
+                  <span className="switch-knob" />
+                </button>
+              </div>
+
+              <div className="tb-prefs-row">
+                <span>呼吸感(卡片落定后微动)</span>
+                <button
+                  className={`switch ${breath ? "is-on" : ""}`}
+                  role="switch"
+                  aria-checked={breath}
+                  onClick={onToggleBreath}
                   disabled={!hasDoc}
                 >
                   <span className="switch-knob" />

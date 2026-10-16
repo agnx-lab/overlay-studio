@@ -42,6 +42,8 @@ export interface OverlayDoc {
   theme?: "dark" | "light"; // 全局主题,卡片 params.theme 可覆盖
   /** 文字可读性光晕(默认关;true 才开)——开了字会发虚,按画面自己定 */
   glow?: boolean;
+  /** 呼吸感:卡片落定后微动(手持镜头、漂浮、落地余震、跟随)。整片一个开关,默认关;单卡可用 params.breath 改 */
+  breath?: boolean;
   /** 全局口播视频(H264):运镜卡 camSrc 留空时导出统一用它,按时间轴自动对位 */
   cam?: string;
   /** 全局字体(src/assets/fonts/ 里的文件名):空 = 默认 IBM Plex Sans SC */
@@ -115,6 +117,7 @@ export function parseOverlay(raw: unknown): {
         version: 1,
         theme,
         glow: o.glow === true,
+        breath: o.breath === true ? true : undefined,
         cam: typeof o.cam === "string" && o.cam ? o.cam : undefined,
         font: typeof o.font === "string" && o.font ? o.font : undefined,
         inkColor: typeof o.inkColor === "string" && /^#[0-9a-fA-F]{3,8}$/.test(o.inkColor) ? o.inkColor : undefined,
