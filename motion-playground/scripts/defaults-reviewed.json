@@ -16,15 +16,15 @@
     "file": "src/effects/hud/Checklist.tsx"
   },
   "entity-chips": {
-    "hash": "0f494f28b48e",
+    "hash": "2bce8c76cd90",
     "file": "src/effects/hud/EntityChips.tsx"
   },
   "focus-card": {
-    "hash": "16853ea6b6f1",
+    "hash": "e1f7f4ddf78b",
     "file": "src/effects/hud/FocusCard.tsx"
   },
   "growth-curve": {
-    "hash": "d9750400627d",
+    "hash": "8b4948ec3561",
     "file": "src/effects/hud/GrowthCurve.tsx"
   },
   "odometer": {
@@ -36,7 +36,7 @@
     "file": "src/effects/hud/PinBoard.tsx"
   },
   "punch-pill": {
-    "hash": "b27d1895c249",
+    "hash": "9c54343fc4ea",
     "file": "src/effects/hud/PunchPill.tsx"
   },
   "quote-lockup": {
@@ -56,7 +56,7 @@
     "file": "src/effects/hud/StatProof.tsx"
   },
   "step-timeline": {
-    "hash": "f5979e7ead1c",
+    "hash": "ebf8839e51c0",
     "file": "src/effects/hud/StepTimeline.tsx"
   },
   "term-card": {
@@ -68,11 +68,11 @@
     "file": "src/effects/hud/Terminal3D.tsx"
   },
   "type-shift": {
-    "hash": "156f06812ce1",
+    "hash": "69da4c5b596a",
     "file": "src/effects/hud/TypeShift.tsx"
   },
   "ui-callout": {
-    "hash": "2da0556855f5",
+    "hash": "4a4ad66b6c84",
     "file": "src/effects/hud/UICallout.tsx"
   },
   "versus-card": {

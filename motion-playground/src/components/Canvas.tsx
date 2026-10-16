@@ -9,7 +9,7 @@ import {
 import type { EffectDef } from "../effects/types";
 import { EFFECTS } from "../effects/registry";
 import { STAGE } from "../stage";
-import { focusCamGeom } from "../effects/hud/camGeom";
+import { focusCamGeomAt } from "../effects/hud/camGeom";
 import { outroFade, type OverlayCard } from "../overlay/types";
 import { useEnter } from "../effects/useAnimation";
 import { FxSpeedScope } from "../effects/FxSpeedScope";
@@ -315,14 +315,20 @@ export function Canvas({
             style={
               pip && pipCard
                 ? (() => {
-                    // 口播框几何走 camGeom 里那一份,和卡自己用的是同一个函数
-                    const g = focusCamGeom(pipCard.params as any);
+                    // 人物聚焦精修版:满屏缩进方框按时间逐帧算,和卡里烤入导出是同一个 focusCamGeomAt
+                    const c = pipCard as { start?: number; end?: number };
+                    const timed = now !== undefined && c.start !== undefined;
+                    const el = timed ? now - (c.start as number) : Infinity;
+                    const dur = timed && c.end !== undefined ? c.end - (c.start as number) : Infinity;
+                    const g = focusCamGeomAt(pipCard.params as any, el, dur);
                     return {
                       left: g.x,
                       top: g.y,
                       width: g.w,
                       height: g.h,
                       borderRadius: g.r,
+                      objectPosition: "50% 45%",
+                      ...(timed ? { transition: "none" } : {}),
                     } as React.CSSProperties;
                   })()
                 : { transform: `scale(${videoScale ?? 1})` }
