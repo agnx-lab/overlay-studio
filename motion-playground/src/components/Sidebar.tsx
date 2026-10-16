@@ -7,8 +7,9 @@ import { EFFECT_GROUPS, EFFECTS } from "../effects/registry";
 /* 效果库最上面的展示栏:这几张换成了 Opus 5.5 精修动效。只在界面里多列一遍,
    不进 EFFECT_GROUPS —— 说明书按 EFFECT_GROUPS 的用途分组生成,AI 靠它挑卡 */
 const OPUS_IDS = ["rank-bars", "odometer", "versus-card", "quote-lockup", "checklist", "blur-text", "chapter-bar", "pin-board", "stat-proof", "ring-metric", "growth-curve", "punch-pill", "step-timeline", "term-card", "ui-callout", "type-shift", "entity-chips", "focus-card", "terminal-3d"];
+const OPUS_TITLE = "Opus 精修动效卡";
 const LIB_GROUPS = [
-  { title: "Opus 精修动效卡", effects: OPUS_IDS.map((id) => EFFECTS.find((e) => e.id === id)!).filter(Boolean) },
+  { title: OPUS_TITLE, effects: OPUS_IDS.map((id) => EFFECTS.find((e) => e.id === id)!).filter(Boolean) },
   ...EFFECT_GROUPS,
 ];
 import { PROMO_URL } from "../promo";
@@ -330,14 +331,16 @@ export function Sidebar({
                     <span className="fx-group-count">{g.effects.length}</span>
                   </div>
                   {g.effects.map((e) => {
-                    idx += 1;
+                    // 展示栏是下面各组里的卡再列一遍,不占编号:编号 01~N 对应卡片库真实张数
+                    const showcase = g.title === OPUS_TITLE;
+                    if (!showcase) idx += 1;
                     return (
                       <button
                         key={e.id}
                         className={`fx-item ${e.id === selectedId ? "is-on" : ""}`}
                         onClick={() => onSelect(e.id)}
                       >
-                        <span className="fx-idx">{String(idx).padStart(2, "0")}</span>
+                        <span className="fx-idx">{showcase ? "★" : String(idx).padStart(2, "0")}</span>
                         <span className="fx-meta">
                           <span className="fx-name">
                             <i className="fx-dot" style={{ background: kindColor(e.id) }} />
