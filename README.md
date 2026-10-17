@@ -96,7 +96,7 @@ npm run -s lint:overlay -- path/to/overlay.json --duration 261
 ## 字体(可选)
 
 **仓库不附带字体文件**——中文字体的授权条款各不相同,很多标着「免费商用」的字体
-并不允许「随软件再分发」。所以字体和音效一样,自己下载放进去。
+并不允许「随软件再分发」。所以字体要自己下载放进去。
 
 1. 把 `.ttf` / `.otf` / `.woff` / `.woff2` 丢进 `motion-playground/src/assets/fonts/`
 2. **字体名 = 文件名**,Studio 左栏「全局字体」下拉里自动出现
@@ -111,20 +111,14 @@ npm run -s lint:overlay -- path/to/overlay.json --duration 261
 
 ## 音效(可选)
 
-导出时可以给每张卡自动配音效,一起烤进 MOV 的音轨。**仓库不附带音效文件**——
-免费音效大多允许你用在自己的视频作品里,但不允许把音频文件本身打包成素材库再分发。
+导出时可以给每张卡自动配音效,一起烤进 MOV 的音轨。**仓库自带 15 个默认音效**,在 `motion-playground/public/sfx-default/`
+(可商用、可再分发、不用署名;来源见该目录「来源与授权.txt」),开箱就有声,
+每类卡按 `scripts/export-frames.mjs` 的 `KIND_SFX` 自动配。
 
-自己加很简单:
+想换成自己的:把同名 mp3 放进 `motion-playground/public/sfx/` 就会优先用你的(下载前确认许可)。
+详见 `public/sfx/README.md`。
 
-1. 到 [Mixkit](https://mixkit.co/free-sound-effects/)、[Freesound](https://freesound.org/)
-   之类的站下载 mp3(下载前确认许可允许你的用途)
-2. 放进 `motion-playground/public/sfx/`,**文件名就是 Studio 右栏「音效」下拉里的选项值**
-3. 在 `src/components/ParamsPanel.tsx` 的 `SFX_OPTIONS` 里加一行,下拉里就能选到
-
-按 `pop-light` `pop` `click` `type` `ding` `chime` `sparkle` `rise` `whoosh` `impact`
-这些名字命名,每类卡的默认音效配对(`scripts/export-frames.mjs` 的 `KIND_SFX`)就能直接生效。
-
-**不放也能用**:找不到音效文件会自动跳过,成片照常导出,只是没有音轨。
+不想要声音:右栏「音效」选「🔇 无音效」。
 
 ## 目录结构
 
@@ -196,5 +190,5 @@ Overlay Studio 就是这么一路做出来的。
 
 完整条款见 [LICENSE](LICENSE)(English: [LICENSE-EN](LICENSE-EN))。
 
-本仓**不附带字体与音效文件** —— 中文字体和音效的授权条款各不相同,很多标着「免费商用」的
-素材并不允许随软件再分发。获取方式见 [安装指南](安装指南.md)。
+本仓**不附带字体文件** —— 中文字体的授权条款各不相同,很多标着「免费商用」的
+字体并不允许随软件再分发。获取方式见 [安装指南](安装指南.md)。自带的 15 个默认音效可商用、可再分发,来源见 `public/sfx-default/来源与授权.txt`。

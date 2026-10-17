@@ -443,8 +443,10 @@ try {
 
   // ---- 音效烤入:按每张卡的出现时刻把音效混成音轨,直接封进 MOV ----
   // 每卡可用参数 sfx 覆盖:留空 = 按类型自动;"none" = 静音;其余 = public/sfx/<名>.mp3
+  // public/sfx/ 里没放同名文件时,退回随仓库附带的 CC0 默认音效(public/sfx-default/)
   if (doc?.cards?.length && result.mov && hasFfmpeg) {
     const SFX_DIR = path.join(ROOT, "public", "sfx");
+    const SFX_DEFAULT_DIR = path.join(ROOT, "public", "sfx-default");
     const KIND_SFX = {
       // 计数/数据 → 数字上升
       "stat-proof": "rise", odometer: "rise", "ring-metric": "rise", "rank-bars": "rise",
@@ -469,7 +471,8 @@ try {
           ? null
           : (c.params?.sfx || (c.kind in KIND_SFX ? KIND_SFX[c.kind] : DEFAULT_SFX));
         if (!chosen) return null;
-        const file = path.join(SFX_DIR, `${chosen}.mp3`);
+        const own = path.join(SFX_DIR, `${chosen}.mp3`);
+        const file = fs.existsSync(own) ? own : path.join(SFX_DEFAULT_DIR, `${chosen}.mp3`);
         if (!fs.existsSync(file)) return null;
         return { t: c.start, file, sfx: chosen, kind: c.kind };
       })

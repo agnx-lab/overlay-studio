@@ -99,6 +99,28 @@ async function renameWithRetry(tmp: string, dest: string) {
 }
 
 /** 导出透明动效层:POST /api/export → 起无头 Chrome 逐帧渲染 PNG 序列到 exports/ */
+/** 音效:public/sfx/ 里放了同名文件就用它,没放就用随仓库附带的 CC0 默认音效(public/sfx-default/)。
+ *  默认音效单独放一个文件夹,是为了不和你自己放进 public/sfx/ 的文件撞名 —— 撞名的话 git pull 会直接失败。 */
+function sfxFallback(): Plugin {
+  return {
+    name: 'sfx-fallback',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const m = /^\/sfx\/([^/?#]+\.mp3)(?:[?#].*)?$/.exec(req.url ?? '')
+        if (!m) return next()
+        let name: string
+        try { name = path.basename(decodeURIComponent(m[1])) } catch { return next() }
+        const pub = path.join(server.config.root, 'public')
+        if (fs.existsSync(path.join(pub, 'sfx', name))) return next()
+        const fallback = path.join(pub, 'sfx-default', name)
+        if (!fs.existsSync(fallback)) return next()
+        res.setHeader('Content-Type', 'audio/mpeg')
+        fs.createReadStream(fallback).pipe(res)
+      })
+    },
+  }
+}
+
 function overlayExport(): Plugin {
   let busy = false
   // 导出进度(GET /api/export-status 轮询用):从脚本 stdout 解析
@@ -296,7 +318,7 @@ function reviewLog(): Plugin {
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), overlayExport(), demoUpload(), reviewLog()],
+  plugins: [react(), sfxFallback(), overlayExport(), demoUpload(), reviewLog()],
   server: {
     port: 5177, // Overlay Studio 固定端口,避免和其他项目的 5173/5174 混淆
     // 端口被占时**报错退出**,不许自己顺延到 5178。

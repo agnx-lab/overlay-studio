@@ -1,25 +1,23 @@
 # 音效库（导出时自动混入 MOV 音轨）
 
-**本仓库不附带音效文件**——免费音效通常允许你用在视频作品里，但不允许把音频文件
-本身当素材库再分发。所以请自己下载几个放进这个文件夹。
+**自带 15 个默认音效**,在隔壁的 `public/sfx-default/`,全部可以商用、随仓库分发、不用署名
+(13 个来自 Kenney 的 CC0 音效包,2 个是代码合成的)。来源见那个文件夹的「来源与授权.txt」。
 
-## 怎么加
+这个文件夹(`public/sfx/`)是留给你放自己音效的。
 
-1. 到任意免费音效站下载 mp3（推荐 [Mixkit](https://mixkit.co/free-sound-effects/)、
-   [Freesound](https://freesound.org/)），下载前确认许可允许你的用途
-2. 把 mp3 放进本文件夹，**文件名就是 Studio 右栏「音效」下拉里的选项值**
-3. 在 `src/components/ParamsPanel.tsx` 的 `SFX_OPTIONS` 里加一行，下拉里就能选到
+## 换成自己的音效
 
+1. 下载 mp3,下载前确认许可允许你的用途(比如 [Freesound](https://freesound.org/) 上标了 CC0 的)
+2. 放进本文件夹,**和默认音效同名就会替换它**(比如放一个 `pop.mp3`,所有用 `pop` 的卡就换成你的声音)
+3. 想加新的音效名:放进来,再在 `src/components/ParamsPanel.tsx` 的 `SFX_OPTIONS` 里加一行,下拉里就能选到
+
+本文件夹有同名文件就优先用它,没有就用默认音效。默认音效那个文件夹不用动,
+你放在这里的文件不会进仓库,更新时也不会冲突。
+
+默认音效的名字:`pop-light` `pop` `pop-cluster` `click` `type` `ding` `chime` `sparkle`
+`rise` `whoosh` `whoosh-soft` `hit-soft` `impact` `glitch` `shutter`。
 特效类型 → 默认音效的对应关系写在 `scripts/export-frames.mjs` 的 `KIND_SFX`。
 
-## 不放也能用
+## 不想要音效
 
-这个文件夹为空不影响任何功能：导出时找不到音效文件会自动跳过，
-成片照常输出，只是没有音轨。想要音效随时再加。
-
-## 建议准备的名字
-
-`pop-light` `pop` `pop-cluster` `click` `type` `ding` `chime` `sparkle`
-`rise` `whoosh` `whoosh-soft` `hit-soft` `impact` `glitch` `shutter`
-
-按这些名字命名，`KIND_SFX` 的默认配对就能直接生效。
+右栏「音效」选「🔇 无音效」即可。
