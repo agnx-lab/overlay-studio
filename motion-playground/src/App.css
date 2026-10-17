@@ -2367,3 +2367,27 @@ input[type="range"]::-moz-range-thumb {
   border-radius: 3px;
   padding: 1px 5px;
 }
+
+/* ---- 效果库:浏览范围下拉 + 分组收起 ---- */
+.fx-category {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 2px 8px;
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--ink-muted);
+}
+.fx-category select,
+.fx-category option,
+.fx-category optgroup {
+  color: var(--ink);
+  background-color: var(--bg-elev);
+  color-scheme: inherit;
+}
+.fx-view-bar { display: flex; justify-content: flex-end; gap: 6px; margin: 2px 0 6px; }
+.fx-view-bar button { padding: 4px 9px; border: 1px solid var(--hairline-strong); border-radius: 5px; background: transparent; color: var(--ink-muted); font: inherit; font-size: 12px; cursor: pointer; }
+.fx-view-bar button:hover { background: var(--fill-subtle); color: var(--ink); }
+.fx-group-toggle { width: 100%; background: transparent; border: 0; border-bottom: 1px solid var(--hairline); text-align: left; cursor: pointer; font-family: var(--font-mono); }
+.fx-group-toggle:hover { color: var(--ink); }
+.fx-group-caret { display: inline-block; width: 14px; font-style: normal; }

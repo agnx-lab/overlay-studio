@@ -118,6 +118,25 @@ export function Sidebar({
   const [view, setView] = useState<"cards" | "srt">("cards");
   // 效果库搜索:按名字/kind/用途描述过滤
   const [fxQuery, setFxQuery] = useState("");
+  // 浏览范围:空 = 全部;group:组名 = 只看这一组
+  const [fxCategory, setFxCategory] = useState("");
+  // 分组收起:卡全摊开要一直往下滑,收起哪几组记在本机
+  const [collapsedGroups, setCollapsedGroups] = useState<string[]>(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("overlayStudioCollapsedGroups") || "[]");
+      return Array.isArray(saved) ? saved.filter((x): x is string => typeof x === "string") : [];
+    } catch {
+      return [];
+    }
+  });
+  const saveCollapsed = (next: string[]) => {
+    setCollapsedGroups(next);
+    try {
+      localStorage.setItem("overlayStudioCollapsedGroups", JSON.stringify(next));
+    } catch {
+      /* 无存储权限时仅保留会话 */
+    }
+  };
   const fxKw = fxQuery.trim().toLowerCase();
   // 过滤后的分组:渲染和键盘 ↑↓ 用同一份,保证「看到的顺序 = 走的顺序」
   const fxGroups = useMemo(() => {
@@ -131,11 +150,19 @@ export function Sidebar({
       // 名字和描述里未必出现这些词(见 types.ts 的 VISUAL_TAGS)
       (e.tags ?? []).some((t) => t.toLowerCase().includes(kw));
     // 组名命中 = 整组保留;否则按卡过滤
-    return LIB_GROUPS.map((g) => ({
-      ...g,
-      effects: kw && g.title.toLowerCase().includes(kw) ? g.effects : g.effects.filter(hit),
-    })).filter((g) => g.effects.length > 0);
-  }, [fxKw]);
+    return LIB_GROUPS.filter((g) => !fxCategory || fxCategory === `group:${g.title}`)
+      .map((g) => ({
+        ...g,
+        effects: kw && g.title.toLowerCase().includes(kw) ? g.effects : g.effects.filter(hit),
+      }))
+      .filter((g) => g.effects.length > 0);
+  }, [fxKw, fxCategory]);
+  // 搜索时不收起:那时要的是结果,不是目录
+  const canCollapse = !fxKw;
+  const isCollapsed = (title: string) => canCollapse && collapsedGroups.includes(title);
+  const toggleGroup = (title: string) =>
+    saveCollapsed(isCollapsed(title) ? collapsedGroups.filter((x) => x !== title) : [...collapsedGroups, title]);
+  const allCollapsed = fxGroups.every((g) => collapsedGroups.includes(g.title));
   const fxListRef = useRef<HTMLDivElement>(null);
   // ↑ ↓ = 上一张 / 下一张卡,两个模式都能用:
   // 效果库走过滤后的卡片库,编辑台走时间轴上的卡(和点一下一样,播放头跟着跳过去)。
@@ -144,7 +171,7 @@ export function Sidebar({
     const inLib = tab === "library";
     if (!inLib && view !== "cards") return;
     const ids = inLib
-      ? [...new Set(fxGroups.flatMap((g) => g.effects.map((x) => x.id)))] // 展示栏的卡在原分组里也有,去重
+      ? [...new Set(fxGroups.filter((g) => !isCollapsed(g.title)).flatMap((g) => g.effects.map((x) => x.id)))] // 收起的组跳过;展示栏的卡在原分组里也有,去重
       : (overlay?.cards ?? []).map((c) => c.id);
     if (ids.length === 0) return;
     const curId = inLib ? selectedId : selCardId;
@@ -165,7 +192,7 @@ export function Sidebar({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [tab, view, fxGroups, overlay, selectedId, selCardId, onSelect, onSelectCard]);
+  }, [tab, view, fxGroups, overlay, selectedId, selCardId, onSelect, onSelectCard, collapsedGroups, canCollapse]);
   // 选中的卡跟着滚进可视区(键盘连按时不会走丢;鼠标点的那张本来就在屏幕上,不会乱跳)
   useEffect(() => {
     fxListRef.current?.querySelector(".fx-item.is-on")?.scrollIntoView({ block: "nearest" });
@@ -317,6 +344,26 @@ export function Sidebar({
               </button>
             ))}
           </div>
+          <label className="fx-category">
+            <span>浏览范围</span>
+            <select className="ctrl-input kind-select" value={fxCategory} onChange={(e) => setFxCategory(e.target.value)}>
+              <option value="">全部卡片({EFFECTS.length})</option>
+              <optgroup label="按用途分类">
+                {LIB_GROUPS.map((g) => (
+                  <option key={g.title} value={`group:${g.title}`}>
+                    {g.title}({g.effects.length})
+                  </option>
+                ))}
+              </optgroup>
+            </select>
+          </label>
+          {canCollapse && fxGroups.length > 1 && (
+            <div className="fx-view-bar">
+              <button type="button" onClick={() => saveCollapsed(allCollapsed ? [] : fxGroups.map((g) => g.title))}>
+                {allCollapsed ? "全部展开" : "全部收起"}
+              </button>
+            </div>
+          )}
           <div className="fx-list" ref={fxListRef}>
             {(() => {
               const kw = fxKw;
@@ -326,11 +373,27 @@ export function Sidebar({
               let idx = 0;
               return groups.map((g) => (
                 <div className="fx-group" key={g.title}>
-                  <div className="fx-group-title">
-                    {g.title}
-                    <span className="fx-group-count">{g.effects.length}</span>
-                  </div>
-                  {g.effects.map((e) => {
+                  {canCollapse ? (
+                    <button
+                      type="button"
+                      className="fx-group-title fx-group-toggle"
+                      aria-expanded={!isCollapsed(g.title)}
+                      onClick={() => toggleGroup(g.title)}
+                    >
+                      <span>
+                        <i className="fx-group-caret">{isCollapsed(g.title) ? "▸" : "▾"}</i>
+                        {g.title}
+                      </span>
+                      <span className="fx-group-count">{g.effects.length}</span>
+                    </button>
+                  ) : (
+                    <div className="fx-group-title">
+                      {g.title}
+                      <span className="fx-group-count">{g.effects.length}</span>
+                    </div>
+                  )}
+                  {/* 收起的组也把编号占上,展开别的组时编号不会跳 */}
+                  {isCollapsed(g.title) ? ((idx += g.title === OPUS_TITLE ? 0 : g.effects.length), null) : g.effects.map((e) => {
                     // 展示栏是下面各组里的卡再列一遍,不占编号:编号 01~N 对应卡片库真实张数
                     const showcase = g.title === OPUS_TITLE;
                     if (!showcase) idx += 1;
