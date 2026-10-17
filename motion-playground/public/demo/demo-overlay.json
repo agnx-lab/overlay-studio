@@ -1,6 +1,7 @@
 {
   "version": 1,
   "theme": "dark",
+  "breath": true,
   "cards": [
     {
       "id": "card-1",
@@ -26,16 +27,41 @@
       ]
     },
     {
+      "id": "card-3",
+      "kind": "blur-text",
+      "start": 0.2,
+      "end": 2.8,
+      "params": {
+        "position": "center",
+        "text": "口播视频|最头疼的|*后期动效*",
+        "staggerMs": 380,
+        "accent": "blue"
+      }
+    },
+    {
       "id": "card-4",
       "kind": "pin-board",
-      "start": 0.2,
+      "start": 2.8,
       "end": 5.5,
       "params": {
         "position": "left",
         "title": "为什么头疼",
         "subtitle": "后期动效",
         "items": "一个个拖关键帧|拖到眼花|新手劝退第一名",
-        "stepMs": 1500,
+        "stepMs": 700,
+        "accent": "blue"
+      }
+    },
+    {
+      "id": "card-5",
+      "kind": "rank-bars",
+      "start": 3.2,
+      "end": 5.5,
+      "params": {
+        "position": "right",
+        "title": "后期哪步最磨人 · 示意",
+        "rows": "动效,52|字幕,28|剪辑,20",
+        "suffix": "%",
         "accent": "blue"
       }
     },
@@ -49,11 +75,24 @@
         "title": "《*三步*出片》",
         "steps": "丢一份字幕稿|AI 按语义编排|导出透明动效层",
         "revealed": 3,
-        "accent": "blue"
+        "accent": "blue",
+        "tagZh": "出片流程"
       }
     },
     {
       "id": "card-7",
+      "kind": "punch-pill",
+      "start": 6.4,
+      "end": 8.7,
+      "params": {
+        "position": "top-right",
+        "text": "不用再拖关键帧",
+        "icon": "",
+        "accent": "blue"
+      }
+    },
+    {
+      "id": "card-8",
       "kind": "odometer",
       "start": 8.7,
       "end": 11.9,
@@ -67,7 +106,23 @@
       }
     },
     {
-      "id": "card-8",
+      "id": "card-9",
+      "kind": "ring-metric",
+      "start": 9.2,
+      "end": 11.9,
+      "params": {
+        "position": "right",
+        "kicker": "PLUG & PLAY",
+        "value": 100,
+        "max": 100,
+        "decimals": 0,
+        "unit": "%",
+        "label": "每张卡开箱即用",
+        "accent": "blue"
+      }
+    },
+    {
+      "id": "card-10",
       "kind": "checklist",
       "start": 11.9,
       "end": 15,
@@ -81,7 +136,20 @@
       }
     },
     {
-      "id": "card-10",
+      "id": "card-11",
+      "kind": "term-card",
+      "start": 12.3,
+      "end": 15,
+      "params": {
+        "position": "right",
+        "en": "Semantic Layout",
+        "term": "语义编排",
+        "def": "AI 先读懂这句话在说什么,再挑最合适的那张卡。",
+        "accent": "blue"
+      }
+    },
+    {
+      "id": "card-12",
       "kind": "focus-card",
       "start": 15.1,
       "end": 18.2,
@@ -90,14 +158,15 @@
         "bg": "cream",
         "items": "拖一拖改位置|换颜色和大小|不顺眼就换卡",
         "stepMs": 950,
-        "accent": "blue"
+        "accent": "blue",
+        "eyebrow": "编辑台 · 随手改"
       },
       "lintOff": [
         "missing-cam"
       ]
     },
     {
-      "id": "card-11",
+      "id": "card-13",
       "kind": "versus-card",
       "start": 18.2,
       "end": 21.5,
@@ -112,10 +181,36 @@
       }
     },
     {
-      "id": "card-13",
-      "kind": "stat-proof",
+      "id": "card-14",
+      "kind": "entity-chips",
       "start": 21.6,
       "end": 24.8,
+      "params": {
+        "position": "left",
+        "chips": "light|Overlay Studio|透明动效层\ndark|剪映 · PR · 达芬奇|拖进去就能用",
+        "note": "EXPORT|PRORES 4444 · ALPHA",
+        "stepMs": 500,
+        "vsText": "→",
+        "accent": "blue"
+      }
+    },
+    {
+      "id": "card-15",
+      "kind": "terminal-3d",
+      "start": 21.9,
+      "end": 24.8,
+      "params": {
+        "position": "right",
+        "file": "export — 导出",
+        "lines": "$ 导出 --透明 --4k|# 只渲染动效层,原片不动|❯ 逐帧渲染 ...|✓ overlay.mov 已写出",
+        "cps": 30
+      }
+    },
+    {
+      "id": "card-16",
+      "kind": "stat-proof",
+      "start": 24.8,
+      "end": 28,
       "params": {
         "position": "left",
         "kicker": "LOSSLESS EXPORT",
@@ -130,14 +225,14 @@
       }
     },
     {
-      "id": "card-14",
-      "kind": "type-shift",
-      "start": 24.8,
+      "id": "card-17",
+      "kind": "quote-lockup",
+      "start": 25.3,
       "end": 28,
       "params": {
-        "position": "center",
-        "lines": "*免费自用|现在就试试|— Overlay Studio",
-        "shiftAtMs": 1200,
+        "side": "right",
+        "quote": "原片 4K|一帧不压,|现在就试试。",
+        "author": "— Overlay Studio",
         "accent": "blue"
       }
     }
