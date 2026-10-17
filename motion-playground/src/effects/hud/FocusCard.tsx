@@ -52,7 +52,7 @@ const IS_EXPORT =
 
 /**
  * 人物聚焦卡:全屏纯色底,口播缩进左侧圆角方框,右侧要点胶囊逐条弹入。
- * 成片时口播轨放在动效层之上,按落位框缩放对齐(同 screen-demo 的用法)。
+ * 成片时口播轨放在动效层之上,按落位框缩放对齐。
  */
 /* ============ 精修版(隔离 Opus 原作移植) ============ */
 
@@ -106,9 +106,7 @@ function fcLayout(items: string[], hasEyebrow: boolean, wr: number, avH: number)
   return { f, m, lines, hs, tops, eb, listH, scroll, blockH: scroll ? avH : eb + listH };
 }
 
-function FocusCardPlate({ params, playToken }: EffectProps<FocusCardParams>) {
-  // 无底板:整屏底色是场景本身(盖住被缩走的原片),保留;去掉的是口播框下的深色投影、序号块里垫字的深色底
-  const bare = false;
+function FocusCard({ params, playToken }: EffectProps<FocusCardParams>) {
   const p = params as FocusCardParams & { scale?: number; __scale?: number; __start?: number; __end?: number; __t?: number };
   const V = false;
   const { w: SW, h: SH } = STAGE;
@@ -137,8 +135,8 @@ function FocusCardPlate({ params, playToken }: EffectProps<FocusCardParams>) {
     theme: `linear-gradient(168deg, color-mix(in srgb, ${acc} 22%, ${themeBase}) 0%, color-mix(in srgb, ${acc} 14%, ${themeBase}) 60%, color-mix(in srgb, ${acc} 8%, ${themeBase}) 100%)`,
   };
   const ink = light ? [28, 30, 29] : [242, 244, 241];
-  const dimInk = light ? (bare ? [70, 74, 72] : [110, 114, 112]) : bare ? [226, 230, 227] : [200, 206, 202];
-  const markBg = bare ? "transparent" : light ? "#fffdf8" : "#0f1311";
+  const dimInk = light ? ([110, 114, 112]) : [200, 206, 202];
+  const markBg = light ? "#fffdf8" : "#0f1311";
   const flashInk = light ? "#ffffff" : "#0b0d0c";
 
   const sc = Math.max(0.2, (Number(p.scale) || 1) * (Number(p.__scale) || 1));
@@ -176,7 +174,7 @@ function FocusCardPlate({ params, playToken }: EffectProps<FocusCardParams>) {
       prev = need;
     });
   }
-  // 竖向导轨:跟着要点一节节长出来;只画在序号块之间,不穿进块里(无底板时块是透明的)
+  // 竖向导轨:跟着要点一节节长出来;只画在序号块之间,不穿进块里
   const railSegs: { top: number; h: number }[] = [];
   for (let j = 1; j < n; j++) {
     const a0 = lay.tops[j - 1] + m + 6 - scroll;
@@ -322,10 +320,8 @@ function FocusCardPlate({ params, playToken }: EffectProps<FocusCardParams>) {
       )}
 
       {/* 口播框投影:z 7 压在画布的口播小窗之上(外投影不画进框内) */}
-      {!bare && (
-        <div style={{ position: "absolute", left: g.x, top: g.y, width: g.w, height: g.h, borderRadius: g.r, zIndex: 7, pointerEvents: "none", boxShadow: "0 40px 90px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.04)" }} />
-      )}
-      {/* 框线:柔光 / 描边 / 绕框光点(「显示口播落位框」关掉就不画,同 pip-shrink) */}
+      <div style={{ position: "absolute", left: g.x, top: g.y, width: g.w, height: g.h, borderRadius: g.r, zIndex: 7, pointerEvents: "none", boxShadow: "0 40px 90px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.04)" }} />
+      {/* 框线:柔光 / 描边 / 绕框光点(「显示口播落位框」关掉就不画) */}
       {p.showRing !== false && <svg viewBox={`0 0 ${SW} ${SH}`} style={{ position: "absolute", left: 0, top: 0, width: SW, height: SH, overflow: "visible", zIndex: 7, pointerEvents: "none" }}>
         <rect {...fr(7)} fill="none" style={{ stroke: acc }} strokeOpacity={0.22} strokeWidth={10} opacity={(draw * frameOut * (0.6 + 0.4 * Math.sin(t * 1.6))).toFixed(3)} />
         <rect {...fr(7)} fill="none" style={{ stroke: acc }} strokeWidth={2.5} pathLength={1000} strokeDasharray="1000 1000" strokeDashoffset={(1000 * (1 - draw)).toFixed(2)} opacity={(frameOut * (0.75 + 0.25 * Math.sin(t * 1.6))).toFixed(3)} />
@@ -335,8 +331,6 @@ function FocusCardPlate({ params, playToken }: EffectProps<FocusCardParams>) {
   );
 }
 
-/** 公开版:直接用精修版动效(完整版里是醒目开垫底板时才换上) */
-const FocusCard = FocusCardPlate;
 
 export const focusCardDef: EffectDef<FocusCardParams> = {
   id: "focus-card",

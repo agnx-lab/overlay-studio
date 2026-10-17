@@ -21,7 +21,7 @@ export interface TermCardParams {
   offsetY?: number;
 }
 
-/* ── 垫底板版「术语卡」:动作逐拍照搬隔离 Opus 一次性作品 board.html 的 renderAt(t) ──
+/* ── 精修版「术语卡」:动作逐拍照搬隔离 Opus 一次性作品 board.html 的 renderAt(t) ──
    深色玻璃底板左向右展开 → 英文小字字距收紧逐字亮起 + 探测波小点 → 术语逐字从模糊中回弹浮出
    → 分隔线画出 → 定义上浮 → 关键词变暖色 + 虚线下划线画出后缓慢流动;最后 0.5s 内容上飘、底板向左收回。
    全部画面是 t 的纯函数;只用行内样式 / SVG 属性,不依赖 hud.css */
@@ -166,11 +166,9 @@ function tAccentRgb(accent: string): [number, number, number] {
 }
 const tRgba = (c: [number, number, number], a: number) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
 
-function TermCardPlate({ params, playToken }: EffectProps<TermCardParams>) {
-  const bare = false; // 新动效·无底板:不画深色卡身和角落辉光,靠投影托字
+function TermCard({ params, playToken }: EffectProps<TermCardParams>) {
   const { position, en, term, def, accent } = params;
   const t0 = useCardElapsed(params as TermCardParams & { __start?: number; __t?: number }, playToken);
-    const vertical = false;
   const extra = params as { scale?: number; __scale?: number; __start?: number; __end?: number };
   // 有 __end 才退场:卡片时长 = __end − __start,最后 0.5s 收走;没有就一直停着
   const DUR = typeof extra.__end === "number" ? Math.max(0, extra.__end - (extra.__start ?? 0)) : Infinity;
@@ -181,7 +179,7 @@ function TermCardPlate({ params, playToken }: EffectProps<TermCardParams>) {
 
   // ── 排版:先定卡宽(安全区),再定各行字号和断行 ──
   const cardScale = (Number(extra.scale) || 1) * (Number(extra.__scale) || 1);
-  const maxW = tMaxWidth(vertical ? "v" : "h", position, cardScale, params.offsetX ?? 0) * T_SAFE;
+  const maxW = tMaxWidth("h", position, cardScale, params.offsetX ?? 0) * T_SAFE;
   const W = Math.round(Math.max(300, Math.min(TP.W, maxW)));
   const avail = W - TP.padL - TP.padR;
   const enCs: TChar[] = Array.from(en ?? "").map((c) => ({ c, key: false }));
@@ -199,7 +197,7 @@ function TermCardPlate({ params, playToken }: EffectProps<TermCardParams>) {
   // 竖直方向不出画:卡太高时先整体挪回画内,还放不下再整体缩小(只在内容极长、又放得很大时才会发生)
   const sy = cardScale;
   const anchorCy = 540 + (params.offsetY ?? 0);
-  const stageH = vertical ? 1920 : 1080;
+  const stageH = 1080;
   const room = stageH - 48;
   const fitZ = H * sy > room ? room / (H * sy) : 1;
   const halfH = (H * sy * fitZ) / 2;
@@ -257,8 +255,8 @@ function TermCardPlate({ params, playToken }: EffectProps<TermCardParams>) {
         style={{
           position: "relative", width: W, height: H, borderRadius: 20,
           fontFamily: 'var(--hud-font, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif)',
-          background: bare ? undefined : "linear-gradient(135deg, rgba(22,22,28,0.86) 0%, rgba(12,12,16,0.80) 100%)",
-          boxShadow: bare ? undefined : "0 24px 60px rgba(0,0,0,0.28), inset 0 0 0 1px rgba(255,255,255,0.08)",
+          background: "linear-gradient(135deg, rgba(22,22,28,0.86) 0%, rgba(12,12,16,0.80) 100%)",
+          boxShadow: "0 24px 60px rgba(0,0,0,0.28), inset 0 0 0 1px rgba(255,255,255,0.08)",
           filter: undefined,
           clipPath: `inset(0 ${((1 - reveal) * 100).toFixed(3)}% 0 0 round 20px)`,
           transform: `translateX(${((1 - pIn) * -24 + op * -10).toFixed(2)}px)`,
@@ -267,7 +265,7 @@ function TermCardPlate({ params, playToken }: EffectProps<TermCardParams>) {
       >
         <div
           style={{
-            position: "absolute", inset: 0, borderRadius: 20, pointerEvents: "none", opacity: bare ? 0 : glowOp,
+            position: "absolute", inset: 0, borderRadius: 20, pointerEvents: "none", opacity: glowOp,
             background: `radial-gradient(420px 220px at 0% 0%, ${tRgba(acc, 0.16)}, ${tRgba(acc, 0)} 70%)`,
           }}
         />
@@ -414,8 +412,6 @@ function TermCardPlate({ params, playToken }: EffectProps<TermCardParams>) {
   );
 }
 
-/** 公开版:直接用精修版动效(完整版里是醒目开垫底板时才换上) */
-const TermCard = TermCardPlate;
 
 
 export const termCardDef: EffectDef<TermCardParams> = {

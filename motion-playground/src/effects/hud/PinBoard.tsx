@@ -35,7 +35,6 @@ export interface PinBoardParams {
  * 卡片时长应覆盖整段讲述(20-60s),stepMs 对齐你讲到每条的时刻;
  * 观众任何时刻扫一眼角落,就知道讲到哪、前面讲了什么。
  */
-/** 公开版:直接用精修版动效(完整版里是醒目开垫底板时才换上) */
 const PinBoard = PinBoardPlate;
 
 export const pinBoardDef: EffectDef<PinBoardParams> = {

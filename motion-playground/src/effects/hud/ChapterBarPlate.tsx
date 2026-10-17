@@ -60,7 +60,6 @@ function textW(s: string, fs: number, ls: number) {
 
 export function ChapterBarPlate({ params, playToken }: EffectProps<ChapterBarParams>) {
   const { accent, showProgress, progMode, progAccent, progAlpha, hideAt, theme } = params;
-  const bare = false; // 无底板:去掉通栏深色底和底部发丝线/投影,字加投影,指示条和进度色保留
   const { w: SW } = STAGE;
   const tAbs = useTimelineTime(params, playToken); // 章节起始秒、隐藏时段都是时间轴绝对秒
   const items = parseChapters(params.chapters);
@@ -126,13 +125,12 @@ export function ChapterBarPlate({ params, playToken }: EffectProps<ChapterBarPar
   const sinceSwitch = cur > 0 ? T - curStart : Infinity; // 第一章没有交接
   const h = cur > 0 ? easeInOutCubic(prog(T, curStart, curStart + HANDOFF)) : 1;
 
-  const light = theme === "light" && !bare;
+  const light = theme === "light" && true;
   const ink = light ? "20,20,24" : "255,255,255";
   const accVar = ACCENT_VAR[accent];
   const progVar = ACCENT_VAR[progAccent || accent];
   const alpha = progAlpha ?? 0.25;
   const isFill = (progMode ?? "fill") === "fill";
-  const dim = bare ? 0.3 : 0; // 无底板:未到/讲完的章字调亮,压花画面也读得清
 
   // ---------- 指示条:切章时从上一章滑到这一章(右沿先走、左沿后跟) ----------
   const indRect = (i: number) => ({ x: lefts[i] + labels[i].pad, w: labels[i].width });
@@ -173,9 +171,8 @@ export function ChapterBarPlate({ params, playToken }: EffectProps<ChapterBarPar
         pointerEvents: "none",
       }}
     >
-      {/* 底板:上深下浅 + 底部发丝线(无底板时整层不画) */}
-      {!bare && (
-        <div
+      {/* 底板:上深下浅 + 底部发丝线 */}
+      <div
           style={{
             position: "absolute",
             inset: 0,
@@ -185,7 +182,6 @@ export function ChapterBarPlate({ params, playToken }: EffectProps<ChapterBarPar
             boxShadow: `0 1px 0 rgba(${ink},0.10), 0 8px 24px rgba(0,0,0,0.18)`,
           }}
         />
-      )}
       {items.map((c, i) => {
         const L = labels[i];
         let p = clamp((T - c.start) / durs[i], 0, 1);
@@ -196,15 +192,15 @@ export function ChapterBarPlate({ params, playToken }: EffectProps<ChapterBarPar
         const headOp = isCur && p > 0.002 ? 0.85 * (i === 0 ? e : h) : 0;
         const on = i === cur ? h : i === cur - 1 ? 1 - h : 0;
         const done = i < cur;
-        const baseA = Math.min(0.92, (done ? 0.74 : 0.6) + dim);
+        const baseA = Math.min(0.92, (done ? 0.74 : 0.6));
         const a = easeOutCubic(prog(te, 0.1 + i * 0.05, 0.4 + i * 0.05)); // 标签错峰浮起
         // 编号:当前章转成强调色(用强调色叠一层),否则淡白
-        const numBase = Math.min(0.85, (done ? 0.5 : 0.42) + dim);
+        const numBase = Math.min(0.85, (done ? 0.5 : 0.42));
         const showFill = showProgress && (isFill || isCur);
         return (
           <div key={i} style={{ position: "absolute", top: 0, left: lefts[i], width: widths[i], height: BAR_H, overflow: "hidden" }}>
             {i > 0 && (
-              <div style={{ position: "absolute", left: 0, top: 14, width: 1, height: 20, background: `rgba(${ink},${bare ? 0.35 : 0.16})` }} />
+              <div style={{ position: "absolute", left: 0, top: 14, width: 1, height: 20, background: `rgba(${ink},${0.16})` }} />
             )}
             {showFill && (
               <div

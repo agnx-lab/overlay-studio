@@ -15,10 +15,8 @@ export interface Terminal3DParams {
   offsetY?: number;
 }
 
-/** 公开版:直接用精修版动效(完整版里是醒目开垫底板时才换上) */
-const Terminal3D = Terminal3DTypePlate;
 
-// ================= 终端打字 · 新动效(精修版,醒目=垫底板 / 新动效·无底板) =================
+// ================= 终端打字 · 精修版 =================
 /**
  * 逐拍照搬参考作品「终端逐行执行」的 renderAt:窗口带回弹 3D 翻入、朝人物侧转 9° →
  * 逐行逐字打出(行首符号回弹弹出、字从半透明到实、光标跟在行末,打字常亮、停下闪烁)→
@@ -143,20 +141,16 @@ function tpAccent(accent: string | undefined): TpRGB {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
-function Terminal3DTypePlate({ params, playToken }: EffectProps<Terminal3DParams>) {
-  // 无底板:去掉深色窗口底、投影/内描边、标题栏和底栏的底色与分隔线、状态色外框和辉光、成功扫光;
-  // 行底的红/绿状态条、红黄绿三点、状态灯、进度格、光标保留;灰字调亮,整窗加 BARE_SHADOW
-  const bare = false;
+function Terminal3D({ params, playToken }: EffectProps<Terminal3DParams>) {
   const ex = params as Terminal3DParams & { __start?: number; __end?: number; scale?: number; __scale?: number;  centerOnStage?: boolean };
   const tRaw = useCardElapsed(ex as Terminal3DParams & { __t?: number; __start?: number }, playToken);
-    const vertical = false;
-  const pos = !vertical && params.position === "center" ? "left" : params.position;
+  const pos = params.position === "center" ? "left" : params.position;
   const right = pos === "right";
   const dir = right ? -1 : 1; // 朝人物侧转:左侧卡往右转,右侧卡镜像
   const dur = typeof ex.__end === "number" ? Math.max(0.5, ex.__end - (ex.__start ?? 0)) : Infinity;
   const t = Math.max(0, Math.min(dur, tRaw));
   const ACC = tpAccent(params.accent);
-  const MUTE = bare ? "#c4cec7" : "#8a9a90";
+  const MUTE = "#8a9a90";
   const INK = "#eef3ef";
 
   // ---- 行:类型 + 语法色 + 开打时刻 ----
@@ -190,15 +184,10 @@ function Terminal3DTypePlate({ params, playToken }: EffectProps<Terminal3DParams
   const s = Math.max(0.2, (Number(ex.scale) || 1) * (Number(ex.__scale) || 1));
   const ox = params.offsetX ?? 0;
   const oy = params.offsetY ?? 0;
-  const SW = vertical ? 1080 : 1920;
-  const SH = vertical ? 1920 : 1080;
+  const SW = 1920;
+  const SH = 1080;
   const within = (sc: number, x: number, limit: number) => (right ? (SW - 120 + x - limit) / sc : (SW - limit - 120 - x) / sc);
-  const maxW =
-    pos === "center"
-      ? (SW - 96 - 2 * Math.abs(ox)) / s
-      : vertical
-        ? within(s, ox, 48)
-        : Math.min(within(1, 0, right ? 1220 : SW - 700), within(s, ox, 48));
+  const maxW = Math.min(within(1, 0, right ? 1220 : SW - 700), within(s, ox, 48));
   const side = (k: TpKind, f: number) => (k === "❯" ? Math.round(f * 2.3) : 0); // ❯ 行右侧留给转圈 / 用时
   const natW = (f: number) => 44 + Math.round((f * 34) / 28) + Math.max(0, ...L.map((r) => tpWidth(r.cs, f) + side(r.k, f))) + 4;
   const W = Math.round(Math.max(Math.min(maxW, 400), Math.min(maxW, Math.max(TP_W, natW(28)))));
@@ -263,7 +252,7 @@ const availH = (SH - 80 - 2 * Math.abs(oy)) / s;
   const ds = Math.floor((run - Math.floor(run)) * 10);
   const clock = `${mm < 10 ? "0" : ""}${mm}:${sec < 10 ? "0" : ""}${sec}.${ds}`;
   const stopped = t > T_STOP;
-  const clockCol = stopped ? (lastK === "✗" ? "#ff5a5f" : "#3df08a") : bare ? "#e0e8e3" : "#b8c6bd";
+  const clockCol = stopped ? (lastK === "✗" ? "#ff5a5f" : "#3df08a") : "#b8c6bd";
 
   // ---- 光标 ----
   let cur = 0;
@@ -293,7 +282,7 @@ const availH = (SH - 80 - 2 * Math.abs(oy)) / s;
     flag: { color: "#7fd8ff" },
     str: { color: "#ffc861" },
     num: { color: "#ffc861" },
-    cmt: { color: bare ? "#b3bfb7" : "#6f7f75", fontStyle: "italic" },
+    cmt: { color: "#6f7f75", fontStyle: "italic" },
     file: { color: "#3df08a", fontWeight: 600 },
     arrow: { color: MUTE },
     id: { color: "#ffb0b2", fontWeight: 600 },
@@ -329,26 +318,24 @@ const anchorFix: CSSProperties = rightOrigin ? { transformOrigin: "100% 50%" } :
             style={{
               position: "absolute", left: 0, top: 0, width: W, height: H, boxSizing: "border-box", borderRadius: 18, overflow: "hidden",
               transformOrigin: right ? "100% 50%" : "0% 50%", fontFamily: TP_MONO, WebkitFontSmoothing: "antialiased",
-              background: bare ? undefined : "linear-gradient(180deg, rgba(14,20,17,0.90), rgba(8,12,10,0.92))",
-              boxShadow: bare ? undefined : "0 30px 70px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.07) inset",
+              background: "linear-gradient(180deg, rgba(14,20,17,0.90), rgba(8,12,10,0.92))",
+              boxShadow: "0 30px 70px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.07) inset",
               filter: undefined,
               transform: `translate3d(${wx.toFixed(2)}px,${wy.toFixed(2)}px,0) rotateY(${ry.toFixed(2)}deg) rotateX(${rx.toFixed(2)}deg) scale(${wsc.toFixed(4)})`,
               opacity: winOp,
             }}
           >
-            {!bare && (
-              <div
+            <div
                 style={{
                   position: "absolute", top: 0, bottom: 0, width: 160, pointerEvents: "none", left: -180 + sw * (W + 212),
                   background: `linear-gradient(90deg, transparent, ${tpRgba(TP_GREEN, 0.16)}, transparent)`, opacity: sw > 0 && sw < 1 ? 1 : 0,
                 }}
               />
-            )}
             {/* 标题栏 */}
             <div
               style={{
                 height: TP_BAR, display: "flex", alignItems: "center", padding: "0 20px", gap: 9, boxSizing: "border-box",
-                borderBottom: bare ? undefined : "1px solid rgba(255,255,255,0.07)", background: bare ? undefined : "rgba(255,255,255,0.03)",
+                borderBottom: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.03)",
               }}
             >
               {["#ff5f57", "#febc2e", "#28c840"].map((c) => (
@@ -357,7 +344,7 @@ const anchorFix: CSSProperties = rightOrigin ? { transformOrigin: "100% 50%" } :
               <span
                 data-fx-role="label"
                 style={{
-                  marginLeft: 14, fontFamily: TP_CJK, fontSize: 19, color: bare ? "#e6ece8" : "#c9d4cd", letterSpacing: 0.5,
+                  marginLeft: 14, fontFamily: TP_CJK, fontSize: 19, color: "#c9d4cd", letterSpacing: 0.5,
                   whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0, flex: "0 1 auto",
                 }}
               >
@@ -461,7 +448,7 @@ const anchorFix: CSSProperties = rightOrigin ? { transformOrigin: "100% 50%" } :
             <div
               style={{
                 height: TP_FOOT, boxSizing: "border-box", display: "flex", alignItems: "center", gap: 10, padding: "14px 22px 18px",
-                borderTop: bare ? undefined : "1px solid rgba(255,255,255,0.07)", fontSize: 15, color: MUTE,
+                borderTop: "1px solid rgba(255,255,255,0.07)", fontSize: 15, color: MUTE,
               }}
             >
               {steps.length > 0 && <span>steps</span>}
@@ -492,7 +479,7 @@ const anchorFix: CSSProperties = rightOrigin ? { transformOrigin: "100% 50%" } :
                       key={li}
                       style={{
                         width: cellW, height: 26, borderRadius: 6, boxSizing: "border-box", position: "relative", overflow: "hidden", flex: "none",
-                        border: `1px solid ${fill > 0 ? tpRgba(col, 0.6) : bare ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.12)"}`,
+                        border: `1px solid ${fill > 0 ? tpRgba(col, 0.6) : "rgba(255,255,255,0.12)"}`,
                         display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, transform: `scale(${(1 + pop).toFixed(3)})`,
                       }}
                     >
@@ -506,15 +493,13 @@ const anchorFix: CSSProperties = rightOrigin ? { transformOrigin: "100% 50%" } :
               </div>
               <span style={{ marginLeft: "auto", fontVariantNumeric: "tabular-nums", color: clockCol, fontSize: 17, flex: "none" }}>{clock}</span>
             </div>
-            {!bare && (
-              <div
+            <div
                 style={{
                   position: "absolute", inset: 0, borderRadius: 18, pointerEvents: "none", boxSizing: "border-box",
                   border: `1.5px solid ${tpRgba(rimCol, 0.35 + 0.4 * glow)}`,
                   boxShadow: `0 0 ${(10 + 30 * glow).toFixed(1)}px ${tpRgba(rimCol, 0.25 * glow)}, inset 0 0 ${(20 * glow).toFixed(1)}px ${tpRgba(rimCol, 0.12 * glow)}`,
                 }}
               />
-            )}
           </div>
         </div>
       </div>

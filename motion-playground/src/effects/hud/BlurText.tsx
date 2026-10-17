@@ -27,7 +27,7 @@ export interface BlurTextParams {
 
 /** React Bits「Blur Text」风格:词块从模糊中逐个浮现(情绪款) */
 
-/* ───────── 垫底板版:逐帧照搬参考作品 board.html 的 renderAt(t) ─────────
+/* ───────── 精修版:逐帧照搬参考作品 board.html 的 renderAt(t) ─────────
    全部画面是卡片秒数 t 的纯函数(导出逐帧确定);只用行内样式,不吃 hud.css 的 .bt-* 规则。
    无边框柔光暗场先亮;逐字从虚焦里浮现(模糊 outQuint 收得快、透明度和上浮 outCubic 收得慢);
    两行时第一行是小字题注(宽字距 + 两侧短线),第二行是主句;*关键词* 用强调色、失焦更深放大更多,
@@ -171,12 +171,10 @@ function bpLayout(lines: BpUnit[][], kinds: BpKind[], z: number, maxW: number, m
   return { rows, W, H: top + (BP_RULE_Y + 4) * z };
 }
 
-function BlurTextPlate({ params, playToken }: EffectProps<BlurTextParams>) {
-  const bare = false; // 新动效·无底板:去掉字后面那团深色暗场,题注两侧短线调亮,关键词下划线保留
+function BlurText({ params, playToken }: EffectProps<BlurTextParams>) {
   const { position, text, staggerMs, accent } = params;
   const tp = params as BlurTextParams & { __t?: number; __start?: number; __end?: number };
   const tRaw = useCardElapsed(tp, playToken);
-   const vertical = false;
   const dur = typeof tp.__end === "number" ? Math.max(0, tp.__end - (tp.__start ?? 0)) : null;
   const t = Math.max(0, dur == null ? tRaw : Math.min(tRaw, dur));
   const acc = ACCENT_VAR[accent] ?? ACCENT_VAR.orange;
@@ -189,32 +187,31 @@ function BlurTextPlate({ params, playToken }: EffectProps<BlurTextParams>) {
   const kinds: BpKind[] = lines.map((_, i) => (n === 2 && i === 0 ? "title" : "main"));
 
   // ── 安全区:三种落位都水平居中于 cx、按 scale 绕中心放大 ──
-  const extra = params as { scale?: number; __scale?: number; vTier?: string };
+  const extra = params as { scale?: number; __scale?: number };
   const s = Math.max(0.2, (Number(extra.scale) || 1) * (Number(extra.__scale) || 1));
   const ox = params.offsetX ?? 0;
   const oy = params.offsetY ?? 0;
-  const SW = vertical ? 1080 : 1920;
-  const SH = vertical ? 1920 : 1080;
+  const SW = 1920;
+  const SH = 1080;
   const cx = SW / 2 + ox;
-  // 人脸线 / 竖版半让线 / 脸下方那条带只按默认大小、默认位置(scale=1、offset=0)算:手动拖开或拉大排版锁住,
+  // 人脸线 / 脸下方那条带只按默认大小、默认位置(scale=1、offset=0)算:手动拖开或拉大排版锁住,
   // 拖开只平移、拉大就真变大;只有出画按真实 scale 和 offset 算
   const cx0 = SW / 2;
-  const vHalf = vertical && extra.vTier === "half";
   // 横版居中会压脸:整块挪到人脸下方,上缘挂在 y=712(锚点改成顶挂、绕上缘中点缩放),offset 照常叠加
-  const below = !vertical && position === "center";
+  const below = position === "center";
   const box = (H: number, oyv = oy, sv = s) => {
     let cy: number;
     if (below) cy = 712 + oyv + (H * sv) / 2;
     else if (position === "top") cy = 110 + oyv + H / 2;
     else if (position === "bottom") cy = SH - 120 + oyv - H / 2;
-    else cy = vHalf ? 96 + oyv + H / 2 : SH / 2 + oyv;
+    else cy = SH / 2 + oyv;
     return { topE: cy - (H * sv) / 2, botE: cy + (H * sv) / 2 };
   };
   /** 允许的半宽(屏幕像素):和人脸同一高度时,挪到脸左/右侧就不越过人脸线;压在脸上挪不开就限宽(只能靠缩小) */
   const frameHalf = Math.min(cx - 48, SW - 48 - cx); // 出画:真实位置
   const faceHalf = (H: number) => {
     const { topE, botE } = box(H, 0, 1);
-    if (!vertical && topE < 700 && botE > 80) {
+    if (topE < 700 && botE > 80) {
       if (cx0 - 1220 >= 160) return cx0 - 1220;
       if (700 - cx0 >= 160) return 700 - cx0;
       return 500;
@@ -224,12 +221,11 @@ function BlurTextPlate({ params, playToken }: EffectProps<BlurTextParams>) {
   const fits = (L: { W: number; H: number }) => {
     const { topE, botE } = box(L.H);
     const d = box(L.H, 0, 1);
-    const m = vertical ? 48 : 24; // 横版上下留 24:参考作品字底就压在 y≈1000,暗场一直铺到画面底
+    const m = 24; // 横版上下留 24:参考作品字底就压在 y≈1000,暗场一直铺到画面底
     // 脸下方那条带(底边离画面底 ≥ 40)按默认大小/位置排;拉大/拖动后快出画在下面整块上移、再缩小
     if (below ? d.botE > SH - 40 : topE < m || botE > SH - m) return false;
-    if (vHalf && position !== "bottom" && d.botE > 690) return false; // 竖版半让:不压到下半屏的人
     // 横版正对人脸那一列(挪不到脸侧)时,上缘不越过 y=700,压不开就继续缩
-    if (!vertical && cx0 - 1220 < 160 && 700 - cx0 < 160 && d.topE < 700 && d.botE > 80) return false;
+    if (cx0 - 1220 < 160 && 700 - cx0 < 160 && d.topE < 700 && d.botE > 80) return false;
     return L.W / 2 <= Math.max(60, faceHalf(L.H)) * 0.99 && (L.W * s) / 2 <= Math.max(60, frameHalf) * 0.99;
   };
   type BpL = NonNullable<ReturnType<typeof bpLayout>>;
@@ -306,7 +302,7 @@ function BlurTextPlate({ params, playToken }: EffectProps<BlurTextParams>) {
       <div style={{ position: "relative", width: W, height: H, fontFamily: BP_FONT, WebkitFontSmoothing: "antialiased", filter: undefined, ...(fitK < 1 || liftY !== 0 ? { transform: `${liftY !== 0 ? `translateY(${(-liftY / s).toFixed(2)}px) ` : ""}scale(${fitK.toFixed(4)})`, transformOrigin: "50% 0" } : null) }}>
         <div
           style={{
-            position: "absolute", left: -padX, top: -58 * z, width: W + 2 * padX, height: H + 143 * z, pointerEvents: "none", display: bare ? "none" : undefined,
+            position: "absolute", left: -padX, top: -58 * z, width: W + 2 * padX, height: H + 143 * z, pointerEvents: "none", display: undefined,
             background:
               "radial-gradient(ellipse 50% 50% at 50% 50%, rgba(14,10,8,0.72) 0%, rgba(14,10,8,0.58) 40%, rgba(14,10,8,0.24) 70%, rgba(14,10,8,0) 100%)",
             opacity: +(sIn * sOut).toFixed(4),
@@ -345,7 +341,7 @@ function BlurTextPlate({ params, playToken }: EffectProps<BlurTextParams>) {
                     key={side}
                     style={{
                       position: "absolute", top: r.top + 31 * z, height: Math.max(1, 1.5 * z), width: w,
-                      left: side < 0 ? W / 2 - gap - w : W / 2 + gap, background: bare ? "rgba(251,247,240,0.88)" : "rgba(251,247,240,0.55)",
+                      left: side < 0 ? W / 2 - gap - w : W / 2 + gap, background: "rgba(251,247,240,0.55)",
                       opacity: +(tk * tOut).toFixed(4),
                     }}
                   />
@@ -419,8 +415,6 @@ function BlurTextPlate({ params, playToken }: EffectProps<BlurTextParams>) {
   );
 }
 
-/** 公开版:直接用精修版动效(完整版里是醒目开垫底板时才换上) */
-const BlurText = BlurTextPlate;
 
 export const blurTextDef: EffectDef<BlurTextParams> = {
   id: "blur-text",

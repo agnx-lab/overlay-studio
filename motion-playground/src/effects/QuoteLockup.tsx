@@ -21,7 +21,7 @@ export interface QuoteLockupParams {
 }
 
 
-/* ══════════ 醒目 · 垫底板:照隔离 Opus 原作逐拍移植(renderAt 纯函数 → t 的纯函数) ══════════ */
+/* ══════════ 精修版:照隔离 Opus 原作逐拍移植(renderAt 纯函数 → t 的纯函数) ══════════ */
 
 const qClamp = (x: number, a: number, b: number) => Math.max(a, Math.min(b, x));
 const qProg = (t: number, a: number, b: number) => qClamp((t - a) / (b - a), 0, 1);
@@ -48,10 +48,9 @@ function qCharEm(c: string) {
   if (/[a-z]/.test(c)) return 0.56;
   return 0.4;
 }
-/** 卡片(缩放前)最大宽:横版不越人脸线(左锚右缘 ≤700,右锚左缘 ≥1220),竖版左右留 48 */
-function qMaxWidth(vertical: boolean, side: string, scale: number, ox: number) {
-  const SW = vertical ? 1080 : 1920;
-  if (vertical) return qWidthWithin(SW, side, scale, ox, 48);
+/** 卡片(缩放前)最大宽:不越人脸线(左锚右缘 ≤700,右锚左缘 ≥1220) */
+function qMaxWidth(side: string, scale: number, ox: number) {
+  const SW = 1920;
   // 人脸线只按默认大小(scale=1)、默认位置(offsetX=0)算:用户拉大就真的变大、拖开只平移;按真实大小/偏移只防出画(离边 48)
   return Math.min(qWidthWithin(SW, side, 1, 0, 1220), qWidthWithin(SW, side, scale, ox, 48));
 }
@@ -140,12 +139,10 @@ function qFit(cs: QChar[], maxW: number, base: number, min: number, ls: number):
   return { fs: min, lines: lines.filter((l) => l.length) };
 }
 
-function QuoteLockupPlate({ params, playToken }: EffectProps<QuoteLockupParams>) {
-  const bare = false; // 新动效·无底板:深色底那层不画,左侧色条和字照常,整体加投影
+function QuoteLockup({ params, playToken }: EffectProps<QuoteLockupParams>) {
   const { side, quote, author, accent } = params;
   const extra = params as { __t?: number; __start?: number; __end?: number; scale?: number; __scale?: number };
   const tRaw = useCardElapsed(extra, playToken);
-   const vertical = false;
   const acc = ACCENT_VAR[accent] ?? ACCENT_VAR.blue;
   const dur = typeof extra.__end === "number" ? Math.max(0, extra.__end - (extra.__start ?? 0)) : null;
   const t = dur == null ? tRaw : Math.min(tRaw, dur);
@@ -161,7 +158,7 @@ function QuoteLockupPlate({ params, playToken }: EffectProps<QuoteLockupParams>)
 
   // ── 排版:卡宽默认 560(原作),内容长就放宽,不越过安全区;放不下先换行再缩 ──
   const cardScale = (Number(extra.scale) || 1) * (Number(extra.__scale) || 1);
-  const maxCardW = qMaxWidth(vertical, side, cardScale, params.offsetX ?? 0) * Q_SAFE;
+  const maxCardW = qMaxWidth(side, cardScale, params.offsetX ?? 0) * Q_SAFE;
   const PADL = 52;
   const PADR = 40;
   const need = Math.max(qWidth(mainSrc, 66, 0.04), ...leadSrc.map((l) => qWidth(l, 44, 0.06))) + PADL + PADR;
@@ -321,7 +318,7 @@ function QuoteLockupPlate({ params, playToken }: EffectProps<QuoteLockupParams>)
       >
         <div
           style={{
-            position: "absolute", inset: 0, borderRadius: 6, display: bare ? "none" : undefined,
+            position: "absolute", inset: 0, borderRadius: 6, display: undefined,
             background: "linear-gradient(135deg, rgba(28,24,20,0.86) 0%, rgba(16,14,12,0.80) 100%)",
             boxShadow: "0 24px 60px rgba(0,0,0,0.28), inset 0 0 0 1px rgba(255,255,255,0.06)",
             clipPath: `inset(0 ${((1 - pIn) * 100).toFixed(3)}% 0 ${(pOut * 100).toFixed(3)}% round 6px)`,
@@ -348,7 +345,7 @@ function QuoteLockupPlate({ params, playToken }: EffectProps<QuoteLockupParams>)
             key={`l${i}`}
             style={{
               position: "relative", whiteSpace: "nowrap", fontSize: leadF, lineHeight: 1.4, fontWeight: 300, letterSpacing: "0.06em",
-              color: `rgba(255,255,255,${qLerp(1, bare ? 0.9 : 0.62, dim).toFixed(3)})`, // 无底板压亮画面,铺垫行别压太暗
+              color: `rgba(255,255,255,${qLerp(1, 0.62, dim).toFixed(3)})`,
             }}
           >
             {renderLine(ln, leadChar)}
@@ -368,7 +365,7 @@ function QuoteLockupPlate({ params, playToken }: EffectProps<QuoteLockupParams>)
         <div
           style={{
             display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 14, marginTop: 8, marginRight: 8,
-            fontSize: signF, lineHeight: 1.4, fontWeight: 400, color: bare ? "rgba(255,255,255,0.92)" : "rgba(255,255,255,0.72)", letterSpacing: "0.12em",
+            fontSize: signF, lineHeight: 1.4, fontWeight: 400, color: "rgba(255,255,255,0.72)", letterSpacing: "0.12em",
             visibility: sign ? "visible" : "hidden",
           }}
         >
@@ -394,8 +391,6 @@ function QuoteLockupPlate({ params, playToken }: EffectProps<QuoteLockupParams>)
   );
 }
 
-/** 公开版:直接用精修版动效(完整版里是醒目开垫底板时才换上) */
-const QuoteLockup = QuoteLockupPlate;
 
 export const quoteLockupDef: EffectDef<QuoteLockupParams> = {
   id: "quote-lockup",

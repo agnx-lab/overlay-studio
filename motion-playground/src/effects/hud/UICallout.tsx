@@ -29,7 +29,7 @@ export interface UICalloutParams {
  * 界面标注:一个圈住目标区域的圆角框 + 一根自绘引线 + 标签。
  * 用「水平/垂直微调」把圈挪到你界面元素的位置,ringW/ringH 调圈大小。
  */
-/* ============ 新动效(醒目=垫底板/无底板):UICalloutPlate ============
+/* ============ 精修版:UICallout ============
    逐拍照搬参考作品「界面标注」:锁定角从外向内收、带回弹(对准)→ 圈框从接点往上下两路描出、在对侧合拢
    → 接点弹出、引线从圈里长出 → 标签从引线一侧展开 → 编号徽章弹出、眉标滑入、文字逐字上浮。
    停留:白色高光沿框游走(1.4 秒一圈)、每 1.1 秒向外扩一圈淡呼吸环。
@@ -176,13 +176,9 @@ function ucRingPaths(L: number, T: number, w: number, h: number, r: number, from
   return { up, dn, comet };
 }
 
-function UICalloutPlate({ params, playToken }: EffectProps<UICalloutParams>) {
-  // 新动效·无底板:去掉标签的深色底板(底色/投影/内描边);圈框、锁定角、引线、强调色条、编号徽章照留,灰字调亮
-  const bare = false;
+function UICallout({ params, playToken }: EffectProps<UICalloutParams>) {
   const { label, ringW, ringH, side, accent } = params;
-  const liveSize = { w: ringW, h: ringH };
   const t0 = useCardElapsed(params as { __t?: number; __start?: number }, playToken);
-    const vertical = false;
   const extra = params as { scale?: number; __scale?: number; __start?: number; __end?: number;  centerOnStage?: boolean };
   // 有 __end 才退场:最后 0.5 秒收走(各拍按参考作品「距终点多久」排);没有就一直停着
   const DUR = typeof extra.__end === "number" ? Math.max(0, extra.__end - (extra.__start ?? 0)) : Infinity;
@@ -203,8 +199,8 @@ function UICalloutPlate({ params, playToken }: EffectProps<UICalloutParams>) {
   const hl = String(params.hlWords ?? "").split("|").map((x) => x.trim()).filter(Boolean);
 
   // ── 圈的几何:和原卡同一个外框(圈宽 + 190),圈在外框里的位置也一样,所以同一组参数圈住同一块 ──
-  const rw = liveSize.w;
-  const rh = liveSize.h;
+  const rw = ringW;
+  const rh = ringH;
   const bw = rw + 190;
   const bh = Math.max(rh, 80);
   const midY = bh / 2;
@@ -217,7 +213,7 @@ function UICalloutPlate({ params, playToken }: EffectProps<UICalloutParams>) {
   // ── 标签宽:只受「不出画」约束(真实 scale / 偏移);圈本身由用户定位,不躲脸 ──
   const s = Math.max(0.2, (Number(extra.scale) || 1) * (Number(extra.__scale) || 1));
   const ox = params.offsetX ?? 0;
-  const SW = vertical ? 1080 : 1920;
+  const SW = 1920;
   const Cx = SW / 2 + ox; // 外框中心(缩放原点)的屏幕 x
   // 标签一侧能放多宽(不出画):左侧 = 接点左边到画面左缘,右侧同理
   const roomOf = (left: boolean) =>
@@ -295,7 +291,7 @@ function UICalloutPlate({ params, playToken }: EffectProps<UICalloutParams>) {
   let ui = 0;
 
   const anchorFix: CSSProperties = {};
-  const sub = bare ? 0.9 : 0.62;
+  const sub = 0.62;
 
   return (
     <div
@@ -348,8 +344,8 @@ function UICalloutPlate({ params, playToken }: EffectProps<UICalloutParams>) {
           style={{
             position: "absolute", left: u2(labelX), top: u2(labelY), width: LW, height: LH, boxSizing: "border-box",
             padding: `16px ${UC_PAD_X + (fromLeft ? 4 : 0)}px 0 ${UC_PAD_X + (fromLeft ? 0 : 4)}px`, borderRadius: 14,
-            background: bare ? undefined : "rgba(12,16,28,0.88)",
-            boxShadow: bare ? undefined : "0 10px 30px rgba(0,0,0,0.28), inset 0 0 0 1px rgba(255,255,255,0.08)",
+            background: "rgba(12,16,28,0.88)",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.28), inset 0 0 0 1px rgba(255,255,255,0.08)",
             color: "#fff", fontFamily: UC_FONT, WebkitFontSmoothing: "antialiased", whiteSpace: "nowrap",
             clipPath: fromLeft ? `inset(0 0 0 ${shut}% round 14px)` : `inset(0 ${shut}% 0 0 round 14px)`,
             transform: `translateX(${u2(labelShift)}px)`,
@@ -405,8 +401,6 @@ function UICalloutPlate({ params, playToken }: EffectProps<UICalloutParams>) {
   );
 }
 
-/** 公开版:直接用精修版动效(完整版里是醒目开垫底板时才换上) */
-const UICallout = UICalloutPlate;
 
 export const uiCalloutDef: EffectDef<UICalloutParams> = {
   id: "ui-callout",

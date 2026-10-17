@@ -25,7 +25,7 @@ export interface VersusCardParams {
 }
 
 
-/* ── 垫底板版「新旧对比」:动作逐拍照搬隔离 Opus 一次性作品 board.html 的 renderAt(t) ──
+/* ── 精修版「新旧对比」:动作逐拍照搬隔离 Opus 一次性作品 board.html 的 renderAt(t) ──
    左右两张卡 + 中间 VS 徽章。落败一边 = 深色玻璃卡:进场后抖一下 → 去饱和、缩小、往外退、标题被红线划掉;
    胜出一边 = 亮白实卡:弹簧放大、强调色描边 + 外发光、高光扫过、对勾描出;停留期呼吸 + VS 外环慢转 + 每 4 秒一道轻扫光。
    「都不」= 两张都是亮卡,只进场不分胜负。参考作品底部两个按内容画的小细节(内存条、入库方块)不通用,去掉。
@@ -36,8 +36,8 @@ const VS_PAD = 38; // 卡内左右边距
 const VS_RED = "#FF5A4E"; // 删除线红,不跟强调色走
 const VS_OUT = 0.5; // 最后 0.5s 收走
 const VS_FONT = '"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif';
-/** 横版:整组压在画面下半(她胸前),顶边不高于 y660,脸完全空出来;竖版挂在顶部特效区(半让时人像从 y700 起) */
-const VS_BAND = { h: [660, 1050], v: [120, 680] } as const;
+/** 整组压在画面下半(口播人胸前),顶边不高于 y660,脸完全空出来 */
+const VS_BAND = [660, 1050] as const;
 
 const vsClamp = (x: number, a: number, b: number) => (x < a ? a : x > b ? b : x);
 const vsProg = (t: number, a: number, b: number) => vsClamp((t - a) / (b - a), 0, 1);
@@ -130,14 +130,11 @@ function vsLayout(kicker: string, title: string, note: string, role: VsRole, W: 
   return { eb, ti, no, tiTop, noTop, h };
 }
 
-function VersusCardPlate({ params, playToken }: EffectProps<VersusCardParams>) {
-  const bare = false; // 新动效·无底板:去掉落败方的深色卡身,亮卡/VS 章/对勾是内容保留
+function VersusCard({ params, playToken }: EffectProps<VersusCardParams>) {
   const { aKicker, aTitle, aSub, aAccent, bKicker, bTitle, bSub, winner } = params;
   const tp = params as VersusCardParams & { __t?: number; __start?: number; __end?: number; scale?: number; __scale?: number };
   const tRaw = useCardElapsed(tp, playToken);
-   const ratio: string = "h";
    const SW = 1920;
-  const vertical = ratio === "v";
   const end = tp.__end;
   // 有 __end 才退场:卡片时长 = __end − __start,最后 0.5s 收走;没有就一直停着
   const D = typeof end === "number" ? Math.max(0, end - (tp.__start ?? 0)) : Infinity;
@@ -162,9 +159,9 @@ function VersusCardPlate({ params, playToken }: EffectProps<VersusCardParams>) {
   const H = Math.max(LA.h, LB.h);
   const totalW = W * 2 + VS_GAP;
   // 纵向:整组放进安全带;放不下就整体再缩(k),胜方弹大时往上多留 4%
-  const [bandTop, bandBottom] = vertical ? VS_BAND.v : VS_BAND.h;
+  const [bandTop, bandBottom] = VS_BAND;
   // 安全带(躲脸)只按默认大小算:用户拉大就真的变大;按真实大小只防出画(上下各留 48,放不下才整体缩)
-  const SH = vertical ? 1920 : 1080;
+  const SH = 1080;
   const oy = params.offsetY ?? 0;
   const k1 = Math.min(1, (bandBottom - bandTop) / (H * 1.04));
   const k = Math.min(k1, (SH - 96) / (H * 1.04 * s));
@@ -236,15 +233,14 @@ function VersusCardPlate({ params, playToken }: EffectProps<VersusCardParams>) {
     const tf = `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px) scale(${sc.toFixed(4)})`;
 
     if (role === "lose") {
-      // 无底板时压暗的终点提亮一些,亮画面上还读得出
-      const c = [236, 236, 239].map((v, i) => Math.round(vsLerp(v, (bare ? [200, 200, 206] : [150, 150, 158])[i], weak)));
+      const c = [236, 236, 239].map((v, i) => Math.round(vsLerp(v, ([150, 150, 158])[i], weak)));
       return (
         <div
           key={which}
           style={{
             position: "absolute", left, top: 0, width: W, height: H, borderRadius: 28, boxSizing: "border-box",
-            background: bare ? undefined : "rgba(26,26,30,0.80)", border: bare ? undefined : "1.5px solid rgba(255,255,255,0.10)",
-            boxShadow: bare ? undefined : "0 18px 40px rgba(0,0,0,0.28)", transformOrigin: origin, transform: tf,
+            background: "rgba(26,26,30,0.80)", border: "1.5px solid rgba(255,255,255,0.10)",
+            boxShadow: "0 18px 40px rgba(0,0,0,0.28)", transformOrigin: origin, transform: tf,
             opacity: op, filter: ["", `saturate(${vsLerp(1, 0.35, weak).toFixed(3)})`].join(" ").trim(),
           }}
         >
@@ -265,7 +261,7 @@ function VersusCardPlate({ params, playToken }: EffectProps<VersusCardParams>) {
             (li) => vsOutCubic(vsProg(t, 1.3 + li * 0.15, 1.75 + li * 0.15)),
           )}
           {L.no.lines.length > 0 &&
-            lineBlock(L.no, 1.3, { top: L.noTop, fontWeight: 500, letterSpacing: "0.04em", color: bare ? "#DCDCE2" : "#A9A9B2" })}
+            lineBlock(L.no, 1.3, { top: L.noTop, fontWeight: 500, letterSpacing: "0.04em", color: "#A9A9B2" })}
         </div>
       );
     }
@@ -356,7 +352,7 @@ function VersusCardPlate({ params, playToken }: EffectProps<VersusCardParams>) {
     <div
       className="hud vsx hud-anchor hud-anchor--center is-in"
       // opacity:1 盖掉编辑台通用的末尾淡出([data-outro] .hud),退场完全由照搬的动作负责,不叠两层。
-      // top / --anchor-tf 行内写死:整组中心落在安全带里(竖版半让档的 CSS 改锚点也一并盖掉)
+      // top / --anchor-tf 行内写死:整组中心落在安全带里
       style={{
         ["--hud-acc" as string]: ACCENT_VAR[aAccent] ?? ACCENT_VAR.green,
         ...offsetVars(params),
@@ -401,8 +397,6 @@ function VersusCardPlate({ params, playToken }: EffectProps<VersusCardParams>) {
   );
 }
 
-/** 公开版:直接用精修版动效(完整版里是醒目开垫底板时才换上) */
-const VersusCard = VersusCardPlate;
 
 
 export const versusCardDef: EffectDef<VersusCardParams> = {

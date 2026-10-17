@@ -19,12 +19,12 @@ export interface PunchPillParams {
   icon?: string;
   offsetX?: number;
   offsetY?: number;
-  /** 时间轴注入(编辑台/导出),垫底板逐帧动画用 */
+  /** 时间轴注入(编辑台/导出),精修版逐帧动画用 */
   __t?: number;
   __start?: number;
 }
 
-/* ───────── 垫底板版:逐帧照搬参考作品 board.html 的 renderAt(t) ─────────
+/* ───────── 精修版:逐帧照搬参考作品 board.html 的 renderAt(t) ─────────
    深色药丸 + 强调色圆章(评论气泡,三个点在停留时轮流跳)。圆章弹簧转进 → 药丸从圆章往右展开 →
    逐字弹簧上浮去模糊 → 重点段下划线扫出 → 一次走光 → 圆章两次脉冲环;退场:字先淡、药丸往回收、圆章缩没。
    文字按第一个「 · 」(或 • | ｜)切成「前半句 + 强调段」;没有分隔时整句白字,下划线划在整句下。
@@ -83,22 +83,22 @@ function ppTokens(text: string): PpTok[] {
 
 /** 卡片(缩放前 CSS 像素)最大宽:按画幅、锚点、缩放、水平偏移推算。
  *  横版人脸线只按默认位置(offsetX=0)算:手动拖开卡宽锁住,不再越拖越窄;拖开后只防出画(离边 PP_V_MARGIN) */
-function ppMaxWidth(vertical: boolean, position: string, scale: number, ox: number) {
-  const SW = vertical ? 1080 : 1920;
+function ppMaxWidth(position: string, scale: number, ox: number) {
+  const SW = 1920;
   const s = Math.max(0.2, scale);
   const edge = 120; // 锚点离边 120px
   if (position === "top-left") {
     // transform-origin 左上:左缘 = 120 + ox
     const frame = (SW - PP_V_MARGIN - edge - ox) / s;
-    return vertical ? frame : Math.min(PP_FACE_X - edge, frame); // 人脸线只按默认大小(scale=1)算,拉大就真的变大
+    return Math.min(PP_FACE_X - edge, frame); // 人脸线只按默认大小(scale=1)算,拉大就真的变大
   }
   if (position === "top-right") {
     // 从右边缘缩放(根元素 transformOrigin right):右缘固定 SW-120+ox,左缘 = 右缘 − W·s
     const within = (o: number, limitX: number, s: number) => (SW - edge + o - limitX) / s;
     // 人脸线只按默认大小(scale=1)、默认位置算;出画用真实 scale / offset
-    return vertical ? within(ox, PP_V_MARGIN, s) : Math.min(within(0, SW - PP_FACE_X, 1), within(ox, PP_V_MARGIN, s));
+    return Math.min(within(0, SW - PP_FACE_X, 1), within(ox, PP_V_MARGIN, s));
   }
-  const m = vertical ? PP_V_MARGIN : edge;
+  const m = edge;
   return (SW - 2 * Math.abs(ox) - 2 * m) / s;
 }
 
@@ -181,12 +181,10 @@ function ppLayout(toks: PpTok[], maxW: number) {
   return { F: PP_FMIN, lines: last.lines };
 }
 
-function PunchPillPlate({ params, playToken }: EffectProps<PunchPillParams>) {
-  const bare = false; // 新动效·无底板:去掉深色药丸和走光,圆章/下划线保留,字照样从左往右展开
+function PunchPill({ params, playToken }: EffectProps<PunchPillParams>) {
   const { position, text, accent } = params;
   const icon = (params.icon ?? "").trim();
   const t = useCardElapsed(params, playToken);
-    const vertical = false;
   const end = (params as { __end?: number }).__end;
   const DUR = typeof end === "number" ? end - (params.__start ?? 0) : null;
   const acc = ACCENT_VAR[accent] ?? ACCENT_VAR.blue;
@@ -195,7 +193,7 @@ function PunchPillPlate({ params, playToken }: EffectProps<PunchPillParams>) {
   const extra = params as { scale?: number; __scale?: number };
   const cardScale = (Number(extra.scale) || 1) * (Number(extra.__scale) || 1);
   const toks = ppTokens(text || "");
-  const maxW = ppMaxWidth(vertical, position, cardScale, params.offsetX ?? 0);
+  const maxW = ppMaxWidth(position, cardScale, params.offsetX ?? 0);
   const { F, lines } = ppLayout(toks, maxW);
   const u = F / PP_F0;
   const lineEms = lines.map((ln) => ln.reduce((a, i) => a + ppCharEm(toks[i].c), 0));
@@ -328,7 +326,7 @@ function PunchPillPlate({ params, playToken }: EffectProps<PunchPillParams>) {
         {/* 底板:深色药丸,clip-path 从左往右展开 */}
         <div
           style={{
-            position: "absolute", inset: 0, borderRadius: R, overflow: "hidden", display: bare ? "none" : undefined,
+            position: "absolute", inset: 0, borderRadius: R, overflow: "hidden", display: undefined,
             background: "linear-gradient(180deg, rgba(30,30,36,.94), rgba(16,16,20,.94))",
             boxShadow: `0 ${14 * u}px ${36 * u}px rgba(0,0,0,.28), 0 ${2 * u}px ${6 * u}px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.08)`,
             clipPath: `inset(0 ${rPct.toFixed(3)}% 0 0 round ${R}px)`,
@@ -395,8 +393,6 @@ function PunchPillPlate({ params, playToken }: EffectProps<PunchPillParams>) {
   );
 }
 
-/** 公开版:直接用精修版动效(完整版里是醒目开垫底板时才换上) */
-const PunchPill = PunchPillPlate;
 
 export const punchPillDef: EffectDef<PunchPillParams> = {
   id: "punch-pill",

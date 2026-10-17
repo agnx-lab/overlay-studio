@@ -48,7 +48,7 @@ function parseChips(raw: string): Chip[] {
  * 一排名牌依次滑入并常驻——白牌(机构)+ 黑牌(人物·头衔)+ 侧注(代码/身份),
  * 之后整段讨论期间一直钉在画面上,观众随时知道"现在在说谁"。
  */
-/* ───────────── 醒目 · 垫底板:两版对照名牌(逐拍照搬隔离 Opus 原作 renderAt) ─────────────
+/* ───────────── 精修版:两版对照名牌(逐拍照搬隔离 Opus 原作 renderAt) ─────────────
  * 牌面分两种性格:
  *   dark  → 「机器方」深石墨底 + 冷蓝 + 等宽字 + 细网格:线性擦出、身份行逐字打出、方块光标闪、周期扫描光
  *   light → 「主角方」暖象牙底 + 点缀色 + 粗体 + 手写下划线:弹簧落位(带倾斜)、呼吸圆点
@@ -143,8 +143,7 @@ function eMaxWidth(position: string, _ratio: string, ox: number, s: number) {
   return (stageW - 96 - 2 * Math.abs(ox)) / s; // 居中:不出画、左右各留 48
 }
 
-function EntityChipsPlate({ params, playToken }: EffectProps<EntityChipsParams>) {
-  const bare = false; // 新动效·无底板:两块名牌是内容保留(深/浅对照就是信息),只去掉侧注每行的深色小底
+function EntityChips({ params, playToken }: EffectProps<EntityChipsParams>) {
   const { position, chips, note, stepMs, accent } = params;
   const tm = params as { __t?: number; __start?: number; __end?: number };
   const tRaw = useCardElapsed(tm, playToken);
@@ -438,7 +437,7 @@ function EntityChipsPlate({ params, playToken }: EffectProps<EntityChipsParams>)
                     style={{
                       position: "absolute", top: noteTop + noteTops[i],
                       ...(dir > 0 ? { left: 32 } : { right: 32 }),
-                      padding: "8px 16px 9px", borderRadius: 8, background: bare ? undefined : "rgba(18,21,28,0.78)", filter: undefined,
+                      padding: "8px 16px 9px", borderRadius: 8, background: "rgba(18,21,28,0.78)", filter: undefined,
                       color: "#F1F3F7", fontSize: r.fs, fontWeight: 500, lineHeight: `${r.lh}px`, whiteSpace: "nowrap",
                       textAlign: dir > 0 ? "left" : "right",
                       opacity: k * (1 - nOut),
@@ -457,10 +456,6 @@ function EntityChipsPlate({ params, playToken }: EffectProps<EntityChipsParams>)
   );
 }
 
-// 醒目 · 垫底板:整张换成「两版对照名牌」,动法逐拍照搬隔离 Opus 的一次性作品(见 EntityChipsPlate)。
-// 外壳二选一渲染,关着垫底板时原版 DOM 一点不变
-/** 公开版:直接用精修版动效(完整版里是醒目开垫底板时才换上) */
-const EntityChips = EntityChipsPlate;
 
 export const entityChipsDef: EffectDef<EntityChipsParams> = {
   id: "entity-chips",

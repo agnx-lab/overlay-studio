@@ -36,10 +36,8 @@ export interface StatProofParams {
   glassAlpha?: number;
 }
 
-/** 公开版:直接用精修版动效(完整版里是醒目开垫底板时才换上) */
-const StatProof = StatProofPlate;
 
-/* ════════ 醒目 · 垫底板:照隔离 Opus「数字实证 · 3 个月」逐拍移植 ════════
+/* ════════ 精修版:照隔离 Opus「数字实证 · 3 个月」逐拍移植 ════════
    深色底板从左往右擦开、左侧强调竖条从上往下长、右侧两只 HUD 角标滑进;
    标签圆点弹出、字逐个上浮;大数字滚轮式计数(慢起-匀速-减速落定,速度越快越糊),
    落定那一下「顿一下」+ 暖光一闪,单位从下方弹入;刻度跟着数字一格格点亮;注脚擦出。
@@ -169,15 +167,14 @@ function spxFootChars(s: string): SpxChar[] {
 /** 卡片 CSS 宽上限(锚点缩放前):横版不越过人脸线(左锚右缘 ≤ x700、右锚左缘 ≥ x1220),
         按锚点的缩放原点把 scale / offsetX 一起算进去。
     横版人脸线只按默认位置(offsetX=0)算:手动拖开后卡宽锁住只平移,拖动后只防出画(离画面边 48) */
-function spxMaxW(vertical: boolean, position: string, s: number, ox: number) {
-  const SW = vertical ? 1080 : 1920;
+function spxMaxW(position: string, s: number, ox: number) {
+  const SW = 1920;
   const M = 48;
   const left = position === "left" || position === "top-left";
   if (!left && position !== "right" && position !== "top-right") {
     // 居中:整张不出画,左右各留 48
     return (SW - 2 * M - 2 * Math.abs(ox)) / s;
   }
-  if (vertical) return spxWidthWithin(SW, left, s, ox, M);
   // 人脸线只按默认大小(scale=1)算:用户拉大就真的变大,只防出画(真实 scale / offset)
   return Math.min(spxWidthWithin(SW, left, 1, 0, 1220), spxWidthWithin(SW, left, s, ox, M));
 }
@@ -193,11 +190,9 @@ function spxWidthWithin(SW: number, left: boolean, s: number, ox: number, limit:
   return (SW - E + ox - limit) / s;
 }
 
-function StatProofPlate({ params, playToken }: EffectProps<StatProofParams>) {
-  const bare = false; // 新动效·无底板:去掉深色底板(连同擦开动作)和落定暖光,左竖条、角标、刻度照留
+function StatProof({ params, playToken }: EffectProps<StatProofParams>) {
   const { position, kicker, kickerZh, prefix, footEn, footZh, accent } = params;
   const t = useCardElapsed(params as unknown as { __t?: number; __start?: number }, playToken);
-    const vertical = false;
   const ext = params as unknown as { __start?: number; __end?: number; scale?: number; __scale?: number };
   const END = typeof ext.__end === "number" ? ext.__end - (ext.__start ?? 0) : Infinity;
   const acc = ACCENT_VAR[accent] ?? ACCENT_VAR.orange;
@@ -240,7 +235,7 @@ function StatProofPlate({ params, playToken }: EffectProps<StatProofParams>) {
   // ── 安全区排版(ref px) ──
   const s = Math.max(0.2, (Number(ext.scale) || 1) * (Number(ext.__scale) || 1));
   // 右上 / 右下角标外凸 10px,一起算进安全区
-  const Wmax = spxMaxW(vertical, position, s, params.offsetX ?? 0) * SPX_REF_SCALE - 12;
+  const Wmax = spxMaxW(position, s, params.offsetX ?? 0) * SPX_REF_SCALE - 12;
   const labelText = [kicker, kickerZh].map((x) => (x ?? "").trim()).filter(Boolean).join(" · ");
   const labelCs: SpxChar[] = Array.from(labelText).map((ch) => ({ ch, hot: false }));
   const footCs = spxFootChars((footZh ?? "").trim());
@@ -390,13 +385,13 @@ function StatProofPlate({ params, playToken }: EffectProps<StatProofParams>) {
               style={{
                 position: "absolute", left: -40, top: 40, width: 420, height: 300, borderRadius: "50%",
                 background: `radial-gradient(closest-side, ${acc}, transparent)`,
-                opacity: bare ? 0 : +(glowA * 0.35).toFixed(3), pointerEvents: "none",
+                opacity: +(glowA * 0.35).toFixed(3), pointerEvents: "none",
               }}
             />
             {/* 深色底板:从左向右擦开 */}
             <div
               style={{
-                position: "absolute", inset: 0, borderRadius: 6, display: bare ? "none" : undefined,
+                position: "absolute", inset: 0, borderRadius: 6, display: undefined,
                 background: "linear-gradient(135deg, rgba(20,20,24,.86) 0%, rgba(26,24,22,.80) 60%, rgba(40,32,18,.78) 100%)",
                 boxShadow: "0 24px 60px rgba(0,0,0,.28), inset 0 0 0 1px rgba(255,255,255,.07)",
                 clipPath: `inset(0 ${(100 - wipe * 100).toFixed(2)}% 0 0 round 6px)`,
@@ -583,7 +578,7 @@ function StatProofPlate({ params, playToken }: EffectProps<StatProofParams>) {
                 >
                   {footEnCs.length > 0 &&
                     footE.lines.map((line, li) => (
-                      <div key={`e${li}`} style={{ fontFamily: SPX_MONO, fontSize: footE.fs, lineHeight: 1.3, letterSpacing: "0.12em", color: bare ? "rgba(255,255,255,.88)" : "rgba(255,255,255,.55)", whiteSpace: "nowrap", marginBottom: li === footE.lines.length - 1 ? 6 : 0 }}>
+                      <div key={`e${li}`} style={{ fontFamily: SPX_MONO, fontSize: footE.fs, lineHeight: 1.3, letterSpacing: "0.12em", color: "rgba(255,255,255,.55)", whiteSpace: "nowrap", marginBottom: li === footE.lines.length - 1 ? 6 : 0 }}>
                         {line.map((c) => c.ch).join("")}
                       </div>
                     ))}

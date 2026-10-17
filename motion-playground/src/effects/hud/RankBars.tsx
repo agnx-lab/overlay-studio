@@ -26,7 +26,7 @@ export interface RankBarsParams {
 }
 
 
-/* ── 垫底板版「数据排名条」:动作逐拍照搬隔离 Opus 一次性作品 board.html 的 renderAt(t) ──
+/* ── 精修版「数据排名条」:动作逐拍照搬隔离 Opus 一次性作品 board.html 的 renderAt(t) ──
    深色圆角底板从左划开、左缘强调色竖线自上而下长出 → 标题圆点弹出、标题逐字浮起、细线展开 →
    各条依次从左滑入,条用阻尼弹簧长出(轻微过冲)、数字同步滚动 → 全部落定后第一名弹出「第一」角标、
    数字轻顿一下、暖光亮起;停留时第一名每 2.4 秒一道光泽扫过,暖光和标题圆点慢呼吸。
@@ -168,12 +168,10 @@ function rbLayout(rows: RbRow[], title: string, suffix: string, lead: number, W:
   return { textW, kFit, kH, kBlock, rankW, gap, items, rowGap, H };
 }
 
-function RankBarsPlate({ params, playToken }: EffectProps<RankBarsParams>) {
-  const bare = false; // 新动效·无底板:去掉深色底板(底色/投影/内描边)和第一名身后的暖光;条、轨道、强调竖线、角标照留,灰字调亮
+function RankBars({ params, playToken }: EffectProps<RankBarsParams>) {
   const { position, title, rows, suffix, accent } = params;
   const t0 = useCardElapsed(params as RankBarsParams & { __start?: number; __t?: number }, playToken);
-   const vertical = false;
-  const extra = params as { scale?: number; __scale?: number; __start?: number; __end?: number; vTier?: string; centerOnStage?: boolean };
+  const extra = params as { scale?: number; __scale?: number; __start?: number; __end?: number; centerOnStage?: boolean };
   // 有 __end 才退场:卡片时长 = __end − __start,最后 0.5s 收走;没有就一直停着
   const DUR = typeof extra.__end === "number" ? Math.max(0, extra.__end - (extra.__start ?? 0)) : Infinity;
   const OUT = DUR - RB_EXIT;
@@ -206,15 +204,14 @@ function RankBarsPlate({ params, playToken }: EffectProps<RankBarsParams>) {
   const s = Math.max(0.2, (Number(extra.scale) || 1) * (Number(extra.__scale) || 1));
   const ox = params.offsetX ?? 0;
   const oy = params.offsetY ?? 0;
-  const SW = vertical ? 1080 : 1920;
-  const SH = vertical ? 1920 : 1080;
+  const SW = 1920;
+  const SH = 1080;
   const onStage = extra.centerOnStage === true; // 「换卡居中」交给 hud.css 的中心缩放
   const side = onStage ? "center" : position === "right" ? "right" : "left";
-  const vHalf = vertical && !onStage && extra.vTier === "half"; // 竖版半让档:卡从 y96 往下挂(hud.css),只能用到 y700
   const frameW =
     side === "left" ? (SW - RB_MARGIN - 120 - ox) / s : side === "right" ? (SW - 120 + ox - RB_MARGIN) / s : (SW - 2 * RB_MARGIN - 2 * Math.abs(ox)) / s;
-  const faceW = vertical || onStage ? Infinity : RB_FACE_W;
-  const maxW = Math.min(faceW, frameW, RB_FACE_W); // 版宽最多 580(竖版也不再加宽)
+  const faceW = onStage ? Infinity : RB_FACE_W;
+  const maxW = Math.min(faceW, frameW, RB_FACE_W); // 版宽最多 580
   // 宽度跟着内容走:短内容保持参考作品的 500,名字长就往宽里让,到上限再换行/缩字
   const z0Lay = rbLayout(list, String(title ?? "").trim(), unit, lead, RB_BASE_W, z);
   const need = Math.max(
@@ -230,19 +227,14 @@ function RankBarsPlate({ params, playToken }: EffectProps<RankBarsParams>) {
   const W = Math.round(Math.max(420, Math.min(maxW, Math.max(RB_BASE_W, need))));
   const L = rbLayout(list, String(title ?? "").trim(), unit, lead, W, z);
   const H = L.H;
-  // 高度上限:竖版半让区 y96–700 按 scale=1 算(躲脸);不出画按真实 scale
-  const frameH = vHalf ? (SH - 2 * RB_MARGIN) / s : (SH - 2 * RB_MARGIN - 2 * Math.abs(oy)) / s;
-  const maxH = Math.min(vHalf ? 700 - 96 : Infinity, frameH);
-  const fit = Math.min(1, maxH / H, frameW / W);
-  // 竖版半让档从上沿往下放大;放大后快出下边时整块上移(scale=1 时恒为 96)
-  const vTop = Math.round(Math.min(96, SH - RB_MARGIN - H * fit * s));
+  // 高度上限:不出画按真实 scale
+  const frameH = (SH - 2 * RB_MARGIN - 2 * Math.abs(oy)) / s;
+  const fit = Math.min(1, frameH / H, frameW / W);
   const anchorFix: CSSProperties = onStage
     ? {}
     : side === "right"
-      ? { transformOrigin: vHalf ? "100% 0" : "100% 50%", ...(vHalf ? { top: vTop } : null) } // 右锚从右边缘缩放:拉大只往左长
-      : vHalf
-        ? { transformOrigin: "0 0", top: vTop }
-        : {};
+      ? { transformOrigin: "100% 50%" } // 右锚从右边缘缩放:拉大只往左长
+      : {};
 
   // ── 时间轴(照搬) ──
   const GAP = Math.min(0.32, 1.3 / n);
@@ -256,7 +248,7 @@ function RankBarsPlate({ params, playToken }: EffectProps<RankBarsParams>) {
   const dotOp = t < 1 ? 1 : 0.65 + 0.35 * (0.5 + 0.5 * Math.cos(t * 3.2));
   const ruleK = rbEIO(rbProg(t, 0.35, 0.8));
   const trackPx = W - RB_PL - RB_PR - 44 * z;
-  const dim = (a: number, b: number) => `rgba(255,255,255,${bare ? b : a})`;
+  const dim = (a: number) => `rgba(255,255,255,${a})`;
 
   const kFit = L.kFit;
   let ci = 0;
@@ -275,8 +267,8 @@ function RankBarsPlate({ params, playToken }: EffectProps<RankBarsParams>) {
             style={{
               position: "absolute", inset: 0, boxSizing: "border-box", padding: `${RB_PT}px ${RB_PR}px ${RB_PT}px ${RB_PL}px`, borderRadius: 22,
               color: "#F4F1EC", fontFamily: RB_FONT, WebkitFontSmoothing: "antialiased",
-              background: bare ? undefined : "linear-gradient(160deg, rgba(26,24,30,0.90), rgba(14,13,18,0.86))",
-              boxShadow: bare ? undefined : "0 24px 60px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.08)",
+              background: "linear-gradient(160deg, rgba(26,24,30,0.90), rgba(14,13,18,0.86))",
+              boxShadow: "0 24px 60px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.08)",
               opacity: rf4(plateOp),
               clipPath: clipR > 0.01 ? `inset(0 ${rf2(clipR)}% 0 0 round 22px)` : "none",
               transform: `translateX(${rf2((1 - pIn) * -24 - o * 30)}px)`,
@@ -300,7 +292,7 @@ function RankBarsPlate({ params, playToken }: EffectProps<RankBarsParams>) {
                       transform: `scale(${rf4(dIn)})`, opacity: rf4(dotOp),
                     }}
                   />
-                  <div data-fx-role="label" style={{ flex: "none", fontSize: kFit.fs, lineHeight: RB_LH, fontWeight: 500, color: dim(0.72, 0.9), letterSpacing: 2, whiteSpace: "nowrap" }}>
+                  <div data-fx-role="label" style={{ flex: "none", fontSize: kFit.fs, lineHeight: RB_LH, fontWeight: 500, color: dim(0.72), letterSpacing: 2, whiteSpace: "nowrap" }}>
                     {kFit.lines.map((line, li) => (
                       <div key={li}>
                         {line.map((c, j) => {
@@ -316,7 +308,7 @@ function RankBarsPlate({ params, playToken }: EffectProps<RankBarsParams>) {
                   </div>
                   <div
                     style={{
-                      flex: 1, minWidth: 0, height: 1, marginTop: L.kH - (kFit.fs * RB_LH) / 2, background: dim(0.16, 0.3),
+                      flex: 1, minWidth: 0, height: 1, marginTop: L.kH - (kFit.fs * RB_LH) / 2, background: dim(0.16),
                       transformOrigin: "0 50%", transform: `scaleX(${rf4(ruleK)})`,
                     }}
                   />
@@ -342,7 +334,7 @@ function RankBarsPlate({ params, playToken }: EffectProps<RankBarsParams>) {
                 const rad = (it.isLead ? 9 : 6) * z;
                 return (
                   <div key={i} style={{ position: "relative", height: it.rowH, marginTop: i > 0 ? L.rowGap : 0 }}>
-                    {it.isLead && !bare && (
+                    {it.isLead && true && (
                       <div
                         style={{
                           position: "absolute", left: -16 * z, right: -14 * z, top: -12 * z, bottom: -14 * z, borderRadius: 14 * z, pointerEvents: "none",
@@ -360,7 +352,7 @@ function RankBarsPlate({ params, playToken }: EffectProps<RankBarsParams>) {
                       <div
                         style={{
                           width: L.rankW, flex: "none", fontSize: it.rfs, lineHeight: RB_LH, fontWeight: 600, fontVariantNumeric: "tabular-nums",
-                          color: it.isLead ? rbRgba(pal.light, 1) : dim(0.38, 0.8), opacity: it.isLead ? rf4(0.75 + 0.25 * hIn) : undefined,
+                          color: it.isLead ? rbRgba(pal.light, 1) : dim(0.38), opacity: it.isLead ? rf4(0.75 + 0.25 * hIn) : undefined,
                         }}
                       >
                         {String(ranks[i]).padStart(2, "0")}
@@ -394,7 +386,7 @@ function RankBarsPlate({ params, playToken }: EffectProps<RankBarsParams>) {
                         }}
                       >
                         <b style={{ fontWeight: 700 }}>{rbFmt(r.value * cp, r.dec)}</b>
-                        {unit && <small style={{ fontSize: "0.55em", fontWeight: 600, marginLeft: 2, opacity: bare ? 0.85 : 0.7 }}>{unit}</small>}
+                        {unit && <small style={{ fontSize: "0.55em", fontWeight: 600, marginLeft: 2, opacity: 0.7 }}>{unit}</small>}
                       </div>
                     </div>
                     <div
@@ -431,8 +423,6 @@ function RankBarsPlate({ params, playToken }: EffectProps<RankBarsParams>) {
   );
 }
 
-/** 公开版:直接用精修版动效(完整版里是醒目开垫底板时才换上) */
-const RankBars = RankBarsPlate;
 
 export const rankBarsDef: EffectDef<RankBarsParams> = {
   id: "rank-bars",

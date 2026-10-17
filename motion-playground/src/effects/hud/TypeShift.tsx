@@ -26,7 +26,7 @@ export interface TypeShiftParams {
 }
 
 /** 杂志排版流:先像草稿左错落,再"啪"地重排成层级版式 */
-/* ───────────── 醒目 · 垫底板:「从草稿到定稿」 ─────────────
+/* ───────────── 精修版:「从草稿到定稿」 ─────────────
    动法逐拍照搬隔离 Opus 的一次性作品(canvas 版 renderAt),改成 SVG/DOM。
    1.6s(shiftAtMs)前:细体逐字打出 + 闪烁光标 + 虚线框/基线辅助线/DRAFT 标签 + 字轻微歪斜晃动;
    转折那一拍:逐字弹簧跳到定稿位(带抛物线跳起)、细→粗、底板变深色实心圆角板、暖色扫光、角标外弹淡出;
@@ -72,15 +72,14 @@ function tpCharEm(c: string) {
 }
 /** 卡片(缩放前)最大宽:按画幅、锚点、卡片大小、水平偏移推算。
  *  横版人脸线只按默认位置(offsetX=0)算:手动拖开后卡宽锁住只平移,只防出画(离画面边 TP_V_MARGIN) */
-function tpMaxWidth(vertical: boolean, position: string, scale: number, ox: number) {
-  const SW = vertical ? 1080 : 1920;
+function tpMaxWidth(position: string, scale: number, ox: number) {
+  const SW = 1920;
   const s = Math.max(0.2, scale);
   if (position === "left" || position === "right") {
-    if (vertical) return tpWidthWithin(SW, position, s, ox, TP_V_MARGIN);
     // 人脸线只按默认大小(scale=1)、默认位置算:用户拉大就真的变大(盖脸是自己选的);按真实大小/偏移只防出画
     return Math.min(tpWidthWithin(SW, position, 1, 0, SW - TP_FACE_X), tpWidthWithin(SW, position, s, ox, TP_V_MARGIN));
   }
-  return (2 * (SW / 2 - Math.abs(ox) - (vertical ? TP_V_MARGIN : 60))) / s;
+  return (2 * (SW / 2 - Math.abs(ox) - (60))) / s;
 }
 /** 左/右锚点:远端边不越过离画面边 limit 的线时的最大宽(两侧都从近画面边那条边缩放,放大只往里长) */
 function tpWidthWithin(SW: number, position: string, s: number, ox: number, limit: number) {
@@ -128,12 +127,9 @@ function tpGreedy(cs: TpCh[], maxEm: number): TpCh[][] {
 const tpStep = (sameLine: boolean, prevF: number, F: number, kSame: number, kNext: number) =>
   Math.abs(prevF - F) < 0.5 ? (sameLine ? kSame : kNext) * F : 0.3 * prevF + 0.9 * F + 6;
 
-function TypeShiftPlate({ params, playToken }: EffectProps<TypeShiftParams>) {
+function TypeShift({ params, playToken }: EffectProps<TypeShiftParams>) {
   const { position, lines, shiftAtMs } = params;
-  // 新动效·无底板:去掉定稿深色板(填色、投影、描边、板上扫光);草稿虚线框、角标、刃线都是内容,保留
-  const bare = false;
   const t = useCardElapsed(params as { __t?: number; __start?: number }, playToken);
-    const vertical = false;
   const end = (params as { __end?: number }).__end;
   const dur = typeof end === "number" ? end - ((params as { __start?: number }).__start ?? 0) : null;
   const uid = useId().replace(/:/g, "");
@@ -178,9 +174,9 @@ function TypeShiftPlate({ params, playToken }: EffectProps<TypeShiftParams>) {
   // ── 排版:先算可用宽,能一行就一行(差一点就微缩),否则长行折两行,再不行缩字号到 44,最后贪心折行 ──
   const extra = params as { scale?: number; __scale?: number };
   const cardScale = (Number(extra.scale) || 1) * (Number(extra.__scale) || 1);
-  const maxW = tpMaxWidth(vertical, position, cardScale, params.offsetX ?? 0) * TP_SAFE;
+  const maxW = tpMaxWidth(position, cardScale, params.offsetX ?? 0) * TP_SAFE;
   const cyAnchor = 540 + (params.offsetY ?? 0);
-  const maxH = (vertical ? 1920 - 96 - 30 : 2 * Math.min(1080 - 30 - cyAnchor, cyAnchor - 30)) / cardScale;
+  const maxH = (2 * Math.min(1080 - 30 - cyAnchor, cyAnchor - 30)) / cardScale;
   const FS0 = 96;
   const FMIN = 44;
   const fitAt = (F: number, mode: "none" | "two" | "greedy") => {
@@ -352,7 +348,7 @@ function TypeShiftPlate({ params, playToken }: EffectProps<TypeShiftParams>) {
         >
           <div
             style={{
-              position: "absolute", inset: 0, borderRadius: rad, overflow: "hidden", display: bare ? "none" : undefined,
+              position: "absolute", inset: 0, borderRadius: rad, overflow: "hidden", display: undefined,
               background: `linear-gradient(180deg, rgba(24,24,28,${fillA.toFixed(3)}), rgba(12,12,15,${fillA.toFixed(3)}))`,
               boxShadow: `0 12px 40px rgba(0,0,0,${(0.35 * morph).toFixed(3)}), inset 0 0 0 1px rgba(255,255,255,${(0.1 * morph).toFixed(3)})`,
             }}
@@ -382,7 +378,7 @@ function TypeShiftPlate({ params, playToken }: EffectProps<TypeShiftParams>) {
                 />
               ))}
               {(params.draftTag ?? "DRAFT · v0.3").trim() && (
-                <text x={16} y={-12} fill="#fff" fillOpacity={(bare ? 0.85 : 0.5) * dashA} style={{ font: '500 17px "SF Mono", Menlo, "PingFang SC", monospace' }}>
+                <text x={16} y={-12} fill="#fff" fillOpacity={(0.5) * dashA} style={{ font: '500 17px "SF Mono", Menlo, "PingFang SC", monospace' }}>
                   {(params.draftTag ?? "DRAFT · v0.3").trim()}
                 </text>
               )}
@@ -441,7 +437,7 @@ function TypeShiftPlate({ params, playToken }: EffectProps<TypeShiftParams>) {
                     </text>
                   )}
                   {wFinal > 0 && (
-                    <text textAnchor="middle" fill="#fff" fillOpacity={boldA * (small ? (bare ? 0.88 : 0.62) : 1)} style={{ fontWeight: small ? 500 : 600 }}>
+                    <text textAnchor="middle" fill="#fff" fillOpacity={boldA * (small ? (0.62) : 1)} style={{ fontWeight: small ? 500 : 600 }}>
                       {ch}
                     </text>
                   )}
@@ -493,8 +489,6 @@ function TypeShiftPlate({ params, playToken }: EffectProps<TypeShiftParams>) {
   );
 }
 
-/** 公开版:直接用精修版动效(完整版里是醒目开垫底板时才换上) */
-const TypeShift = TypeShiftPlate;
 
 export const typeShiftDef: EffectDef<TypeShiftParams> = {
   id: "type-shift",

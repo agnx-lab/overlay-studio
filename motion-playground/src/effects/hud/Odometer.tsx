@@ -27,10 +27,8 @@ export interface OdometerParams {
   __start?: number;
 }
 
-/** 公开版:直接用精修版动效(完整版里是醒目开垫底板时才换上) */
-const Odometer = OdometerPlate;
 
-/* ── 垫底板版:逐条照搬隔离 Opus 一次性作品(odometer board.html)的 renderAt,画面是 t 的纯函数 ──
+/* ── 精修版:逐条照搬隔离 Opus 一次性作品(odometer board.html)的 renderAt,画面是 t 的纯函数 ──
  * 参考作品只演一位数 0→1;多位数时每一位一只鼓轮装在同一个机匣里,同一套圆柱鼓轮手法,
  * 个位先到位、往高位每位晚 0.12s(和原卡一样从个位往高位依次落),最后一位落下那拍才是重音。 */
 const odClamp = (x: number, a = 0, b = 1) => Math.max(a, Math.min(b, x));
@@ -44,7 +42,7 @@ const OD_SPIN = 1.35; // 个位落位时刻(参考作品 SPIN_D)
 const OD_STAGGER = 0.12; // 往高位每位晚落
 const OD_EXIT = 0.5;
 const OD_FACE_X = 700; // 横版人脸左缘约 720
-const OD_V_MARGIN = 48; // 竖版左右至少留的边
+const OD_V_MARGIN = 48; // 左右至少离画面边
 const OD_INK = "#F4EFE9";
 /** 鼓轮位置(格):起步咬合加速 → 长减速冲过一点 → 落位机械回弹 */
 function odReelPos(t: number, steps: number, land: number) {
@@ -87,15 +85,14 @@ function odFit(text: string, F0: number, minF: number, avail: number, emOf: (c: 
   if (!two) return { F: Math.max(minF, avail / tot), lines: [chars] };
   return { F: Math.max(minF, Math.min(F0, avail / two.w)), lines: [chars.slice(0, two.at), chars.slice(two.at)] };
 }
-/** 卡片(未乘 scale)允许的最大宽:左/右锚点不越人脸线,竖版两侧各留 48。
- *  横版人脸线 / 人脸下方的版面宽只按默认大小、默认位置(scale=1、offsetX=0)算:拉大就真的变大,拖开卡宽锁住只平移;
+/** 卡片(未乘 scale)允许的最大宽:左/右锚点不越人脸线。
+ *  人脸线 / 人脸下方的版面宽只按默认大小、默认位置(scale=1、offsetX=0)算:拉大就真的变大,拖开卡宽锁住只平移;
  *  出画(离画面边 OD_V_MARGIN)按真实 scale、offsetX 算 */
-function odMaxWidth(vertical: boolean, position: string, scale: number, ox: number) {
-  const SW = vertical ? 1080 : 1920;
+function odMaxWidth(position: string, scale: number, ox: number) {
+  const SW = 1920;
   const s = Math.max(0.2, scale);
   const frame = (SW - 2 * OD_V_MARGIN - 2 * Math.abs(ox)) / s;
-  if (position === "center") return vertical ? frame : Math.min(580, frame);
-  if (vertical) return odWidthWithin(SW, position, s, ox, OD_V_MARGIN);
+  if (position === "center") return Math.min(580, frame);
   return Math.min(odWidthWithin(SW, position, 1, 0, SW - OD_FACE_X), odWidthWithin(SW, position, s, ox, OD_V_MARGIN));
 }
 /** 左/右锚点:远端边不越过离画面边 limit 的线时的最大宽 */
@@ -111,11 +108,9 @@ const odMix = (c: string, pct: number, to = "transparent") => `color-mix(in srgb
 
 /** 横版居中:锚点改成顶边挂在 y712(人脸下方),水平仍居中;缩放从顶边往下 */
 const OD_BELOW_FACE = { top: 712, bottom: "auto", ["--anchor-tf" as string]: "translateX(-50%)", transformOrigin: "50% 0" } as CSSProperties;
-function OdometerPlate({ params, playToken }: EffectProps<OdometerParams>) {
+function Odometer({ params, playToken }: EffectProps<OdometerParams>) {
   const { position, kicker, value, unit, label, accent } = params;
-  const bare = false; // 新动效·无底板:去掉深色卡身;鼓轮机匣、色条、分隔线都是内容,保留
   const t0 = useCardElapsed(params, playToken);
-   const vertical = false;
   const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
   const end = (params as { __end?: number }).__end;
   const dur = typeof end === "number" ? end - (params.__start ?? 0) : null;
@@ -127,7 +122,7 @@ function OdometerPlate({ params, playToken }: EffectProps<OdometerParams>) {
   // ── 排版:先算可用宽 ──
   const extra = params as { scale?: number; __scale?: number };
   const cardScale = (Number(extra.scale) || 1) * (Number(extra.__scale) || 1);
-  const maxW = odMaxWidth(vertical, position, cardScale, params.offsetX ?? 0) * 0.96;
+  const maxW = odMaxWidth(position, cardScale, params.offsetX ?? 0) * 0.96;
   const PAD_L = 54, PAD_R = 56;
   const inner = Math.max(200, maxW - PAD_L - PAD_R - 24); // 留出落位轻震/闪框的余量
 
@@ -163,7 +158,7 @@ function OdometerPlate({ params, playToken }: EffectProps<OdometerParams>) {
 
   // 横版居中会压脸:整块挪到人脸下方(上边 y712、底边离画面底 ≥40,即高 ≤328);
   // 放不下先收间距、再压鼓轮字号(数字不小于 44),最后才整卡缩小。拖动(offsetX/Y)照常叠加在这个基准上
-  const below = !vertical && position === "center";
+  const below = position === "center";
   const G = below ? { top: 28, bot: 30, eyeGap: 18, ruleGap: 18, labGap: 12 } : { top: 40, bot: 42, eyeGap: 30, ruleGap: 30, labGap: 18 };
   const unitFAt = (uu: number) => (unitBelow || !unit ? unitF : Math.max(44, Math.min(unitF, 84 * uu)));
   const cardH = (uu: number) => {
@@ -278,8 +273,8 @@ function OdometerPlate({ params, playToken }: EffectProps<OdometerParams>) {
         data-fx-role="group"
         style={{
           position: "relative", padding: `${G.top}px ${PAD_R}px ${G.bot}px ${PAD_L}px`, borderRadius: 22,
-          background: bare ? undefined : "linear-gradient(160deg, rgba(30,26,23,0.86) 0%, rgba(16,14,13,0.88) 100%)",
-          boxShadow: bare ? undefined : "0 24px 60px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.07)",
+          background: "linear-gradient(160deg, rgba(30,26,23,0.86) 0%, rgba(16,14,13,0.88) 100%)",
+          boxShadow: "0 24px 60px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.07)",
           filter: undefined,
           fontFamily: font, color: OD_INK, textAlign: "left",
           clipPath: `inset(0 ${clipR.toFixed(2)}% 0 0 round 22px)`,

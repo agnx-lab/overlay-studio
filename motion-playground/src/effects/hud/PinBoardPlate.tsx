@@ -5,7 +5,7 @@ import { ACCENT_SWATCH, ACCENT_VAR, offsetVars } from "./accent";
 import type { PinBoardParams } from "./PinBoard";
 
 /*
- * 要点钉板 · 精修版(醒目开「垫底板 / 新动效·无底板」时走)。
+ * 要点钉板 · 精修版。
  * 逐拍照搬隔离 Opus 原作 board.html 的 renderAt:短强调线伸出 → 「要点 n / N」计数滑入 → 空心描边大标题从左擦出
  * → 强调色条展开、副题字滑入;每条要点像钉牌一样按重力加速落下(带歪)、落地压扁、绕钉摆两下停住,
  * 钉子从上方按下并漾开一圈涟漪,计数跳一下;最新一块牌带一个 3.2 秒一呼吸的小点,旧牌只降亮度不位移。
@@ -113,11 +113,11 @@ function fit(text: string, maxW: number, base: number, oneMin: number, min: numb
 const fitW = (f: Fit, ls: number) => Math.max(0, ...f.lines.map((l) => lineW(l, f.fs, ls)));
 
 /** 卡(缩放前)最大宽:躲脸只按 scale=1、offset=0 算;不出画按真实 scale、offset(右锚点从右缘缩放) */
-function maxWidth(vertical: boolean, right: boolean, s: number, ox: number) {
-  const SW = vertical ? 1080 : 1920;
+function maxWidth(right: boolean, s: number, ox: number) {
+  const SW = 1920;
   const within = (sc: number, o: number, limit: number) => (right ? SW - EDGE + o - limit : SW - limit - EDGE - o) / Math.max(0.2, sc);
-  const face = vertical ? V_MARGIN : SW - FACE_X;
-  return Math.min(within(vertical ? s : 1, 0, face), within(s, ox, V_MARGIN));
+  const face = SW - FACE_X;
+  return Math.min(within(1, 0, face), within(s, ox, V_MARGIN));
 }
 
 /* 原作尺寸 */
@@ -128,10 +128,8 @@ const L = {
 };
 
 function PinBoardPlate({ params, playToken }: EffectProps<PinBoardParams>) {
-  const bare = false; // 无底板:去掉黑牌的深色底、内描边和牌下投影,字加 BARE_SHADOW;副题色条、钉子、涟漪是内容,保留
   const { position, title, subtitle, items, stepMs, accent } = params;
   const t0 = useCardElapsed(params, playToken);
-    const vertical = false;
   const extra = params as PinBoardParams & { scale?: number; __scale?: number; __end?: number;  };
   const DUR = typeof extra.__end === "number" ? Math.max(0, extra.__end - (extra.__start ?? 0)) : Infinity;
   const t = Math.max(0, Math.min(DUR, t0));
@@ -165,13 +163,13 @@ function PinBoardPlate({ params, playToken }: EffectProps<PinBoardParams>) {
   const s = (Number(extra.scale) || 1) * (Number(extra.__scale) || 1);
   const ox = params.offsetX ?? 0;
   const oy = params.offsetY ?? 0;
-  const W = Math.max(280, Math.min(vertical ? Infinity : 600, maxWidth(vertical, right, s, ox) * SAFE));
+  const W = Math.max(280, Math.min(600, maxWidth(right, s, ox) * SAFE));
   const titleFit = title?.trim() ? fit(title, W - 8, L.titleFs, L.titleFs, 44, L.titleLS / L.titleFs) : null;
   const subFit = subtitle?.trim() ? fit(subtitle, W - L.subPadL - L.subPadR, L.subFs, 32, 30, L.subLS / L.subFs) : null;
   const plateChrome = L.platePadL + L.numML + numW + L.numMR + L.platePadR;
 
   // ── 竖直方向:放不下先收间距,再收牌高/字号,最后整体缩小 ──
-  const SH = vertical ? 1920 : 1080;
+  const SH = 1080;
   const maxH = (SH - V_MARGIN - TOP0 - oy) / Math.max(0.2, s);
   const layout = (tight: number) => {
     const pFs = tight >= 2 ? 30 : L.plateFs;
@@ -366,11 +364,11 @@ function PinBoardPlate({ params, playToken }: EffectProps<PinBoardParams>) {
             const rv = prog(t, d + FALL, d + FALL + 0.6);
             const r = 6 + 40 * outCubic(rv);
             const ringOp = rv > 0 && rv < 1 ? 0.7 * (1 - rv) : 0;
-            // 当前项 vs 已讲过:旧的稍微退后,不位移(无底板时压暗得少一点,花画面上也读得清)
+            // 当前项 vs 已讲过:旧的稍微退后,不位移
             const nd = dropT[i + 1];
             const fade = nd !== undefined ? outCubic(prog(t, nd + FALL, nd + FALL + 0.5)) : 0;
-            const txtOp = 1 - (bare ? 0.12 : 0.32) * fade;
-            const numOp = 1 - (bare ? 0.2 : 0.45) * fade;
+            const txtOp = 1 - (0.32) * fade;
+            const numOp = 1 - (0.45) * fade;
             // 当前小圆点:落定后出现,极慢呼吸(待机唯一的动)
             const curIn = outCubic(prog(t, d + FALL + 0.2, d + FALL + 0.6));
             const breathe = 0.75 + 0.25 * Math.cos((t - d) * Math.PI * 2 / 3.2);
@@ -393,10 +391,8 @@ function PinBoardPlate({ params, playToken }: EffectProps<PinBoardParams>) {
                   style={{
                     position: "relative", height: pl.h, display: "flex", alignItems: "center", boxSizing: "border-box",
                     padding: `0 ${L.platePadR}px 0 ${L.platePadL}px`, borderRadius: 6, whiteSpace: "nowrap",
-                    background: bare ? undefined : plateBg,
-                    boxShadow: bare
-                      ? undefined
-                      : `0 ${shY.toFixed(1)}px ${shB.toFixed(1)}px rgba(0,0,0,${(shA * shK).toFixed(3)}), ${plateEdge}`,
+                    background: plateBg,
+                    boxShadow: `0 ${shY.toFixed(1)}px ${shB.toFixed(1)}px rgba(0,0,0,${(shA * shK).toFixed(3)}), ${plateEdge}`,
                     filter: undefined,
                   }}
                 >

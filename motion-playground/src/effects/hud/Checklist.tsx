@@ -28,7 +28,7 @@ export interface ChecklistParams {
 const STAGGER = 160;
 
 
-/* ── 醒目 · 垫底板:「步骤清单」板,动法逐拍照搬隔离 Opus 的一次性作品 ──
+/* ── 精修版:「步骤清单」板,动法逐拍照搬隔离 Opus 的一次性作品 ──
    卡片一行一行往下长;每条:出现 → 0.55s 后打勾三拍(圆圈描边 → 实心弹出带回弹 → 勾线写出 + 光晕爆开);
    左侧竖线 / 标题下进度条 / 右上「n / 总数」三处同步;最新一条呼吸光、旧的退到 68%;
    全部勾完一道光扫过;有终点时最后 0.5s 向外滑出淡掉。 */
@@ -116,24 +116,20 @@ function ckFit(s: string, maxW: number, base: number, oneLineMin: number, min: n
   }
   return { fs: min, lines: ckGreedy(s, min, ls, maxW) };
 }
-/** 卡宽上限(安全区):横版左锚右边缘 ≤ x700、右锚左边缘 ≥ x1220;竖版左右各留 48。
- *  横版人脸线只按默认大小、默认位置(scale=1、offsetX=0)算:拉大就真变大、拖开卡宽锁住只平移;
+/** 卡宽上限(安全区):左锚右边缘 ≤ x700、右锚左边缘 ≥ x1220。
+ *  人脸线只按默认大小、默认位置(scale=1、offsetX=0)算:拉大就真变大、拖开卡宽锁住只平移;
  *  出画按真实 scale/offsetX 算(离边 48;右锚从右边缩放,右缘固定不外凸) */
-function ckMaxWidth(position: string, ratio: string, ox: number, s: number) {
-  const vert = ratio === "v";
-  const stageW = vert ? 1080 : 1920;
+function ckMaxWidth(position: string, ox: number, s: number) {
   if (position === "right") {
-    // 锚点 right:120,缩放原点在右边:右缘固定在 stageW−120+ox,左边缘 = 右缘 − W·s
-    const face = vert ? Infinity : 1920 - 120 - 1220; // 横版人脸线按 scale=1、ox=0:左缘 = 1800 − W ≥ 1220
-    return Math.min(face, (stageW - 120 + ox - 48) / s);
+    // 锚点 right:120,缩放原点在右边:右缘固定在 1920−120+ox,左边缘 = 右缘 − W·s
+    const face = 1920 - 120 - 1220; // 人脸线按 scale=1、ox=0:左缘 = 1800 − W ≥ 1220
+    return Math.min(face, (1920 - 120 + ox - 48) / s);
   }
   // left / top-left:锚点 left:120,缩放原点在左边
-  return Math.min(vert ? Infinity : 700 - 120, (stageW - 48 - 120 - ox) / s);
+  return Math.min(700 - 120, (1920 - 48 - 120 - ox) / s);
 }
-/** 卡高上限(舞台像素,未乘 scale):横版上下各留 40;竖版(半让,顶在 y96)底边不过 y1000。
- *  竖版 y1000 人像线只按 scale=1、offsetY=0 算,拖动/拉大后只防底边出画(留 48) */
-function ckMaxHeight(position: string, ratio: string, oy: number, s: number) {
-  if (ratio === "v") return Math.min(1000 - 96, (1920 - 48 - 96 - oy) / s);
+/** 卡高上限(舞台像素,未乘 scale):上下各留 40 */
+function ckMaxHeight(position: string, oy: number, s: number) {
   if (position === "top-left") return (1040 - 96 - oy) / s;
   return (2 * (500 - Math.abs(oy))) / s;
 }
@@ -162,12 +158,10 @@ function ckPalette(accent: string) {
   };
 }
 
-function ChecklistPlate({ params, playToken }: EffectProps<ChecklistParams>) {
-  const bare = false; // 新动效·无底板:不画深色卡身和全勾完那道扫光,主色边条/进度条/勾圈都保留
+function Checklist({ params, playToken }: EffectProps<ChecklistParams>) {
   const { position, title, items, accent } = params;
   const tp = params as ChecklistParams & { __t?: number; __start?: number; __end?: number };
   const t = useCardElapsed(tp, playToken);
-   const vertical = false;
   const end = tp.__end;
   const dur = typeof end === "number" ? Math.max(0, end - (tp.__start ?? 0)) : null;
   const pal = ckPalette(accent);
@@ -181,8 +175,7 @@ function ChecklistPlate({ params, playToken }: EffectProps<ChecklistParams>) {
   // ── 排版:卡宽受安全区限制;标题 44 起不缩(只换行),每条 33 → 单行微缩到 30 → 两行 ──
   const extra = params as { scale?: number; __scale?: number };
   const cardScale = (Number(extra.scale) || 1) * (Number(extra.__scale) || 1);
-  const rk = vertical ? "v" : "h";
-  const W = Math.floor(Math.min(CK_W, ckMaxWidth(position, rk, params.offsetX ?? 0, cardScale)));
+  const W = Math.floor(Math.min(CK_W, ckMaxWidth(position, params.offsetX ?? 0, cardScale)));
   const padX = W < CK_W ? 30 : CK_PAD_X;
   const inner = W - padX * 2;
   const tFit = ckFit(title, inner, 44, 44, 44, 0.02);
@@ -197,7 +190,7 @@ function ChecklistPlate({ params, playToken }: EffectProps<ChecklistParams>) {
     return { ...f, locked, lh, textH: f.lines.length * lh };
   });
   // 条数多放不下:先收紧行距(行上下留白 30 → 14),还不够再整体等比缩
-  const maxH = ckMaxHeight(position, rk, params.offsetY ?? 0, cardScale);
+  const maxH = ckMaxHeight(position, params.offsetY ?? 0, cardScale);
   const rowHOf = (vpad: number) => rows.map((r) => (r.lines.length > 1 ? Math.max(48 + vpad, r.textH + vpad * 0.55) : 48 + vpad));
   const fullOf = (hs: number[]) => CK_PAD_T + headH + hs.reduce((a, b) => a + b, 0) + CK_PAD_B;
   let vpad = 30;
@@ -275,8 +268,8 @@ function ChecklistPlate({ params, playToken }: EffectProps<ChecklistParams>) {
               position: "relative", width: W, height: panelH, padding: `${CK_PAD_T}px ${padX}px ${CK_PAD_B}px`, boxSizing: "border-box",
               borderRadius: 22, overflow: "hidden", color: "#fff",
               fontFamily: 'var(--hud-font, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif)',
-              background: bare ? undefined : `linear-gradient(160deg, ${pal.panelA}, ${pal.panelB})`,
-              boxShadow: bare ? undefined : `0 24px 60px rgba(0,0,0,0.35), inset 0 0 0 1px ${ckRgb(pal.sheen, 0.14)}`,
+              background: `linear-gradient(160deg, ${pal.panelA}, ${pal.panelB})`,
+              boxShadow: `0 24px 60px rgba(0,0,0,0.35), inset 0 0 0 1px ${ckRgb(pal.sheen, 0.14)}`,
               filter: undefined,
               transformOrigin: right ? "100% 50%" : "0 50%",
               opacity: +(pin * (1 - pout)).toFixed(4),
@@ -288,7 +281,7 @@ function ChecklistPlate({ params, playToken }: EffectProps<ChecklistParams>) {
               style={{
                 position: "absolute", top: "-20%", left: 0, width: 180, height: "140%", pointerEvents: "none",
                 background: `linear-gradient(90deg, ${ckRgb(pal.sheen, 0)}, ${ckRgb(pal.sheen, 0.16)}, ${ckRgb(pal.sheen, 0)})`,
-                opacity: !bare && sw > 0 && sw < 1 ? 1 : 0,
+                opacity: sw > 0 && sw < 1 ? 1 : 0,
                 transform: `translateX(${(-220 + (W + 300) * ckOutCubic(sw)).toFixed(1)}px) skewX(-18deg)`,
               }}
             />
@@ -395,8 +388,6 @@ function ChecklistPlate({ params, playToken }: EffectProps<ChecklistParams>) {
   );
 }
 
-/** 公开版:直接用精修版动效(完整版里是醒目开垫底板时才换上) */
-const Checklist = ChecklistPlate;
 
 export const checklistDef: EffectDef<ChecklistParams> = {
   id: "checklist",

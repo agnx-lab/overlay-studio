@@ -27,7 +27,7 @@ export interface RingMetricParams {
 }
 
 
-/* ── 醒目 · 垫底板:「刻度环占比板」,动法逐拍照搬隔离 Opus 的一次性作品(流浪对话 8%) ──
+/* ── 精修版:「刻度环占比板」,动法逐拍照搬隔离 Opus 的一次性作品(流浪对话 8%) ──
    深色圆角底板 + 100 格刻度环,前 value/max 格点亮成强调色;数字指数缓动计数,定格后光晕按 2.4s 呼吸,
    灰刻度上一道微光慢扫;分隔线划出 → 说明上浮 → 「· 标签」弹入;最后 0.5s 向外轻移、微缩、淡出。 */
 const RP_W = 540; // 卡宽(参考作品)
@@ -120,10 +120,8 @@ function rpOffsets(src: string, lines: string[]) {
   });
 }
 
-function RingMetricPlate({ params, t: tRaw }: { params: RingMetricParams; t: number }) {
-  const bare = false; // 新动效·无底板:只去掉深色底板,刻度环、左缘竖线、短标签照留,灰字调亮
+function RingMetricView({ params, t: tRaw }: { params: RingMetricParams; t: number }) {
   const { position, kicker, value, max, decimals, unit, label, accent } = params;
-    const vertical = false;
   const end = (params as { __end?: number }).__end;
   const dur = typeof end === "number" ? Math.max(0, end - ((params as { __start?: number }).__start ?? 0)) : Infinity;
   const t = Math.min(Math.max(0, tRaw), dur);
@@ -168,20 +166,20 @@ function RingMetricPlate({ params, t: tRaw }: { params: RingMetricParams; t: num
   const sub = max > 0 ? `OF ${max.toLocaleString("en-US", { maximumFractionDigits: 2 })}${unit ?? ""}` : "";
 
   // ── 安全区:人脸线 / 不出画;放不下先整体缩,再整体挪进安全带 ──
-  // 人脸线、半让线只按默认大小(scale=1)、默认位置(offsetX=0)算:拉大就真的变大、拖开就锁住大小只平移;
+  // 人脸线只按默认大小(scale=1)、默认位置(offsetX=0)算:拉大就真的变大、拖开就锁住大小只平移;
   // 只有不出画(离画面边 48)按真实 scale / offsetX 算
   const s = Number((params as { scale?: number }).scale) || 1;
   const ox = params.offsetX ?? 0;
-  const stageW = vertical ? 1080 : 1920;
+  const stageW = 1920;
   const pos = position === "left" || position === "right" ? position : "center";
   // 左锚点从左边缘缩放、右锚点从右边缘缩放(右缘固定在 stageW−120+x,往左长),居中从中心
   const centerX = (w: number, sc: number, x: number) =>
     pos === "left" ? 120 + x + (w * sc) / 2 : pos === "right" ? stageW - 120 + x - (w * sc) / 2 : stageW / 2 + x;
   let k = 1;
   // 横版居中也不许压脸:按默认落点归到左/右安全带(正中归左,照参考作品放左侧)
-  const [lo, hi] = vertical ? [48, stageW - 48] : centerX(RP_W, 1, 0) <= 960 ? [48, 700] : [1220, 1872];
+  const [lo, hi] = centerX(RP_W, 1, 0) <= 960 ? [48, 700] : [1220, 1872];
   k = Math.min(k, (hi - lo) / RP_W, (stageW - 96) / (RP_W * s));
-  k = Math.min(k, ((vertical ? 1920 : 1080) - 48) / (H * s)); // 竖直方向不出画(上下各留 24)
+  k = Math.min(k, ((1080) - 48) / (H * s)); // 竖直方向不出画(上下各留 24)
   const Wl = RP_W * k;
   const Hl = H * k;
   // 先按默认大小、默认位置挪进安全带,再按真实大小和位置防出画
@@ -283,7 +281,7 @@ function RingMetricPlate({ params, t: tRaw }: { params: RingMetricParams; t: num
             {/* 底板 */}
             <div
               style={{
-                position: "absolute", inset: 0, borderRadius: 30, display: bare ? "none" : undefined,
+                position: "absolute", inset: 0, borderRadius: 30, display: undefined,
                 background: "linear-gradient(160deg, rgba(22,20,24,0.86), rgba(10,10,13,0.80))",
                 boxShadow: "0 30px 80px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.07)",
               }}
@@ -301,7 +299,7 @@ function RingMetricPlate({ params, t: tRaw }: { params: RingMetricParams; t: num
                 data-small-text="kicker"
                 style={{
                   position: "absolute", left: 44, top: 40, fontSize: kFit.fs, fontWeight: 600, lineHeight: 1.4,
-                  color: bare ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.62)", letterSpacing: `${(0.32 - 0.14 * pe).toFixed(3)}em`, whiteSpace: "nowrap", opacity: pe,
+                  color: "rgba(255,255,255,0.62)", letterSpacing: `${(0.32 - 0.14 * pe).toFixed(3)}em`, whiteSpace: "nowrap", opacity: pe,
                 }}
               >
                 {kFit.lines.map((ln, li) => {
@@ -357,7 +355,7 @@ function RingMetricPlate({ params, t: tRaw }: { params: RingMetricParams; t: num
                 {unit && <small style={{ fontSize: fsNum / 2, fontWeight: 600, marginLeft: 4, color: LITE, letterSpacing: 0 }}>{unit}</small>}
               </div>
               {sub && (
-                <div style={{ position: "absolute", left: 0, right: 0, top: 344, textAlign: "center", fontSize: 18, fontWeight: 500, color: bare ? "rgba(255,255,255,0.88)" : "rgba(255,255,255,0.45)", letterSpacing: "0.12em", opacity: subOp.toFixed(3) }}>
+                <div style={{ position: "absolute", left: 0, right: 0, top: 344, textAlign: "center", fontSize: 18, fontWeight: 500, color: "rgba(255,255,255,0.45)", letterSpacing: "0.12em", opacity: subOp.toFixed(3) }}>
                   {sub}
                 </div>
               )}
@@ -380,7 +378,7 @@ function RingMetricPlate({ params, t: tRaw }: { params: RingMetricParams; t: num
                       return (
                         <span key={li} style={{ display: "block" }}>
                           {ln.slice(0, cut)}
-                          {cut < ln.length && <span style={{ color: bare ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.5)", fontWeight: 500 }}>{ln.slice(cut)}</span>}
+                          {cut < ln.length && <span style={{ color: "rgba(255,255,255,0.5)", fontWeight: 500 }}>{ln.slice(cut)}</span>}
                         </span>
                       );
                     })}
@@ -406,11 +404,9 @@ function RingMetricPlate({ params, t: tRaw }: { params: RingMetricParams; t: num
   );
 }
 
-/** 公开版:直接用精修版动效(完整版里是醒目开垫底板时才换上) */
-const RingMetric = RingMetricPlateHost;
-function RingMetricPlateHost({ params, playToken }: EffectProps<RingMetricParams>) {
+function RingMetric({ params, playToken }: EffectProps<RingMetricParams>) {
   const t = useCardElapsed(params as { __t?: number; __start?: number }, playToken);
-  return <RingMetricPlate params={params} t={t} />;
+  return <RingMetricView params={params} t={t} />;
 }
 
 export const ringMetricDef: EffectDef<RingMetricParams> = {

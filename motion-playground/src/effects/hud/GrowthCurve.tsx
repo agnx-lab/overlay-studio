@@ -200,8 +200,7 @@ function gcWidthWithin(SW: number, side: string, scale: number, ox: number, limi
   return side === "right" ? (SW - edge + ox - limit) / s : (SW - limit - edge - ox) / s;
 }
 
-function GrowthCurvePlate({ params, playToken }: EffectProps<GrowthCurveParams>) {
-  const bare = false; // 新动效·无底板:去掉深色磨砂卡身、投影、内描边和角落光晕;曲线、点、色条、倍数药丸是内容保留,字靠投影托
+function GrowthCurve({ params, playToken }: EffectProps<GrowthCurveParams>) {
   const { position, kicker, kickerZh, points, unit, drawMs, caption, accent } = params;
   const tp = params as GrowthCurveParams & { __start?: number; __end?: number; scale?: number; __scale?: number;  centerOnStage?: boolean };
   const tRaw = useCardElapsed(tp, playToken);
@@ -431,7 +430,7 @@ function GrowthCurvePlate({ params, playToken }: EffectProps<GrowthCurveParams>)
   const footP = gcOCubic(gcProg(t, countB, countB + 0.5));
 
   const txtF: CSSProperties = {};
-  const dimC = (c: string) => (bare ? "rgba(255,255,255,0.88)" : c);
+  const dimC = (c: string) => (c);
   const abs: CSSProperties = { position: "absolute" };
 
   const rootStyle: CSSProperties = {
@@ -452,9 +451,7 @@ function GrowthCurvePlate({ params, playToken }: EffectProps<GrowthCurveParams>)
               ...abs, left: 0, top: 0, width: W, height: H, borderRadius: 28, overflow: "hidden", boxSizing: "border-box",
               opacity: cardOp, clipPath: clip, transformOrigin: side === "right" ? "100% 50%" : "0% 50%",
               transform: `translateX(${cardX.toFixed(2)}px) scale(${cardS.toFixed(4)})`,
-              ...(bare
-                ? {}
-                : {
+              ...({
                     background: pal.bg,
                     boxShadow: `0 30px 80px ${pal.shadow}, inset 0 0 0 1px ${pal.inset}`,
                     WebkitBackdropFilter: "blur(18px)",
@@ -462,7 +459,7 @@ function GrowthCurvePlate({ params, playToken }: EffectProps<GrowthCurveParams>)
                   }),
             }}
           >
-            {!bare && <div style={{ ...abs, inset: 0, pointerEvents: "none", background: `radial-gradient(420px 260px at 85% 18%, ${pal.sheen}, transparent 70%)` }} />}
+            <div style={{ ...abs, inset: 0, pointerEvents: "none", background: `radial-gradient(420px 260px at 85% 18%, ${pal.sheen}, transparent 70%)` }} />
             <div style={{ ...abs, left: side === "right" ? undefined : 0, right: side === "right" ? 0 : undefined, top: 0, bottom: 0, width: 4, background: `linear-gradient(180deg, ${pal.hi}, ${pal.edgeB})`, transformOrigin: "50% 0%", transform: `scaleY(${edgeS.toFixed(4)})` }} />
 
             {kLines.length > 0 && (
@@ -520,7 +517,7 @@ function GrowthCurvePlate({ params, playToken }: EffectProps<GrowthCurveParams>)
                   {gridY.map((gy, i) => (
                     <line key={i} x1={0} y1={gy.toFixed(2)} y2={gy.toFixed(2)} x2={(GC_CW * gcOCubic(gcProg(t, 0.35 + i * 0.06, 0.95 + i * 0.06))).toFixed(2)} stroke={pal.grid} strokeWidth={1} strokeDasharray="2 6" />
                   ))}
-                  <line x1={0} y1={BASE} y2={BASE} x2={(GC_CW * gp).toFixed(2)} stroke={gcCss(pal.base, bare ? 0.55 : 0.35)} strokeWidth={1} />
+                  <line x1={0} y1={BASE} y2={BASE} x2={(GC_CW * gp).toFixed(2)} stroke={gcCss(pal.base, 0.35)} strokeWidth={1} />
                 </g>
                 {n > 1 && (
                   <g clipPath={`url(#${gid}c)`}>
@@ -567,7 +564,7 @@ function GrowthCurvePlate({ params, playToken }: EffectProps<GrowthCurveParams>)
                 const lp = gcOCubic(gcProg(t, reach[i] + 0.04, reach[i] + 0.44));
                 const left = Math.max(-28, Math.min(GC_CW + 28 - xlW, p.x - xlW / 2));
                 return (
-                  <div key={i} style={{ ...abs, left, top: CH, width: xlW, textAlign: "center", fontSize: 18, lineHeight: "22px", letterSpacing: "0.04em", color: i === fi ? (bare ? "#ffffff" : pal.xlHi) : dimC(pal.xl), fontWeight: i === fi ? 600 : 400, opacity: (gcClamp(gp * 1.5) * (0.35 + 0.65 * lp)).toFixed(3), ...txtF }}>
+                  <div key={i} style={{ ...abs, left, top: CH, width: xlW, textAlign: "center", fontSize: 18, lineHeight: "22px", letterSpacing: "0.04em", color: i === fi ? (pal.xlHi) : dimC(pal.xl), fontWeight: i === fi ? 600 : 400, opacity: (gcClamp(gp * 1.5) * (0.35 + 0.65 * lp)).toFixed(3), ...txtF }}>
                     {pts[i].label}
                   </div>
                 );
@@ -600,8 +597,6 @@ function GrowthCurvePlate({ params, playToken }: EffectProps<GrowthCurveParams>)
   );
 }
 
-/** 公开版:直接用精修版动效(完整版里是醒目开垫底板时才换上) */
-const GrowthCurve = GrowthCurvePlate;
 
 export const growthCurveDef: EffectDef<GrowthCurveParams> = {
   id: "growth-curve",

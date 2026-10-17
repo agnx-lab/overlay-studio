@@ -16,7 +16,7 @@ export interface StepTimelineParams {
   offsetY?: number;
 }
 
-/* ══════════ 精修版(醒目=垫底板/无底板):逐拍照搬参考作品「章节大纲」 ══════════
+/* ══════════ 精修版:逐拍照搬参考作品「章节大纲」 ══════════
  * 深色卡从顶部展开 → 眉标滑入 → 标题逐字升起、重点词由糊变清落地 + 暖光一闪 + 下划线扫出
  * → 分隔线 → 时间轴向下长出、章节依次弹入 → 焦点落到当前章(高亮条扫入、节点填色、声呐波纹、标签弹出)
  * → 未讲到的章节压暗;停留时整卡轻浮动、重点词呼吸微光;最后 0.5s 标题与章节上飘淡出、底板收回顶部 */
@@ -117,11 +117,9 @@ function stFit(cs0: string[], maxW: number, oneMax: number, oneMin: number, twoM
   return { fs: min, lines: stGreedy(cs, min, ls, maxW) };
 }
 
-function StepTimelinePlate({ params, playToken }: EffectProps<StepTimelineParams>) {
-  const bare = false; // 新动效·无底板:去掉深色卡身(底色/描边/投影)和顶部扫光;高亮条、节点、时间轴、标签药丸照留,灰字调亮
+function StepTimeline({ params, playToken }: EffectProps<StepTimelineParams>) {
   const { position, title, accent, steps, revealed } = params;
   const t0 = useCardElapsed(params as { __t?: number; __start?: number }, playToken);
-    const vertical = false;
   const extra = params as { scale?: number; __scale?: number; __start?: number; __end?: number;  centerOnStage?: boolean };
   // 有 __end 才退场:卡片时长 = __end − __start,最后 0.5s 收走;没有就一直停着
   const DUR = typeof extra.__end === "number" ? Math.max(0, extra.__end - (extra.__start ?? 0)) : Infinity;
@@ -153,14 +151,14 @@ function StepTimelinePlate({ params, playToken }: EffectProps<StepTimelineParams
   const s = Math.max(0.2, (Number(extra.scale) || 1) * (Number(extra.__scale) || 1));
   const ox = params.offsetX ?? 0;
   const oy = params.offsetY ?? 0;
-  const SW = vertical ? 1080 : 1920;
-  const SH = vertical ? 1920 : 1080;
+  const SW = 1920;
+  const SH = 1080;
   const onStage = extra.centerOnStage === true; // 「换卡居中」交给 hud.css 的中心缩放
   const side = onStage ? "center" : position === "left" ? "left" : "right";
   // 右锚从右边缘缩放:右缘固定在 SW−120+ox,左缘 = 右缘 − W·s;左锚从左边缘缩放
   const frameW =
     side === "left" ? (SW - 120 - ox - STP_MARGIN) / s : side === "right" ? (SW - 120 + ox - STP_MARGIN) / s : (SW - 2 * STP_MARGIN - 2 * Math.abs(ox)) / s;
-  const faceW = vertical ? Infinity : STP_FACE_W;
+  const faceW = STP_FACE_W;
   const countT = n ? `· 共 ${n} 部分` : "";
   const tagW = tagT ? stLineW(Array.from(tagT), 21, 4) + 10 + stLineW(Array.from(countT), 21, 4) + 80 : 0;
   const pillW = (txt: string) => (txt ? stLineW(Array.from(txt), 19, 2) + 28 : 0);
@@ -238,11 +236,9 @@ const anchorFix: CSSProperties = !onStage && side === "right" ? { transformOrigi
   const oStep = n > 1 ? Math.min(0.06, 0.18 / (n - 1)) : 0;
 
   const abs = { position: "absolute" as const };
-  const ink = (a: number, b: number) => `rgba(255,255,255,${bare ? b : a})`;
+  const ink = (a: number) => `rgba(255,255,255,${a})`;
   const nodeFill = (p: number) =>
-    bare
-      ? stRgba(acc, f3(p)) // 无底板:空心节点不垫深色底
-      : `rgb(${Math.round(stLerp(25, acc[0], p))},${Math.round(stLerp(23, acc[1], p))},${Math.round(stLerp(29, acc[2], p))})`;
+    `rgb(${Math.round(stLerp(25, acc[0], p))},${Math.round(stLerp(23, acc[1], p))},${Math.round(stLerp(29, acc[2], p))})`;
   let ci = 0;
   let hi = 0;
 
@@ -262,23 +258,19 @@ const anchorFix: CSSProperties = !onStage && side === "right" ? { transformOrigi
               visibility: t < DUR ? "visible" : "hidden", transform: `translateY(${f2(fl)}px)`,
             }}
           >
-            {!bare && (
-              <div
+            <div
                 style={{
                   ...abs, inset: 0, borderRadius: 22, transformOrigin: "50% 0", transform: `scaleY(${f4(sy)})`, opacity: f3(plateOp),
                   background: "linear-gradient(160deg, rgba(30,27,34,0.90) 0%, rgba(16,15,20,0.86) 100%)",
                   boxShadow: "0 24px 60px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.08)",
                 }}
               />
-            )}
-            {!bare && (
-              <div
+            <div
                 style={{
                   ...abs, left: f2(glintX), top: 0, width: 150, height: 2, borderRadius: 2, opacity: f3(glintOp),
                   background: `linear-gradient(90deg, ${stRgba(acc, 0)}, ${accHex} 40%, ${stRgba(acc, 0)})`,
                 }}
               />
-            )}
             <div style={{ ...abs, inset: 0, filter: undefined }}>
               {tagT && (
                 <div
@@ -288,7 +280,7 @@ const anchorFix: CSSProperties = !onStage && side === "right" ? { transformOrigi
                     color: accHex, fontWeight: 600, whiteSpace: "nowrap", opacity: f3(ebOp), transform: `translateX(${f2(stLerp(-14, 0, eb))}px)`,
                   }}
                 >
-                  {tagT} <b style={{ color: ink(0.5, 0.88), fontWeight: 500 }}>{countT}</b>
+                  {tagT} <b style={{ color: ink(0.5), fontWeight: 500 }}>{countT}</b>
                 </div>
               )}
               <div
@@ -356,13 +348,13 @@ const anchorFix: CSSProperties = !onStage && side === "right" ? { transformOrigi
               </div>
               <div
                 style={{
-                  ...abs, left: 40, top: ruleTop, width: W - 80, height: 1, background: ink(0.14, 0.4), transformOrigin: "0 50%", transform: `scaleX(${f4(rl)})`,
+                  ...abs, left: 40, top: ruleTop, width: W - 80, height: 1, background: ink(0.14), transformOrigin: "0 50%", transform: `scaleX(${f4(rl)})`,
                 }}
               />
               {n > 1 && (
                 <div
                   style={{
-                    ...abs, left: STP_ROW_X + 37 - 1, top: trackTop, width: 2, height: trackH, background: ink(0.18, 0.5),
+                    ...abs, left: STP_ROW_X + 37 - 1, top: trackTop, width: 2, height: trackH, background: ink(0.18),
                     transformOrigin: "50% 0", transform: `scaleY(${f4(tr)})`,
                   }}
                 />
@@ -378,10 +370,10 @@ const anchorFix: CSSProperties = !onStage && side === "right" ? { transformOrigi
                 // 当前章 / 已讲过:节点填色;未讲到:压暗
                 const fillP = isAct || isDone ? activeP : 0;
                 const dimP = active >= 0 && i > active ? activeP : 0;
-                const nameA = isDone ? stLerp(1, bare ? 0.9 : 0.78, activeP) : stLerp(1, bare ? 0.6 : 0.42, dimP);
+                const nameA = isDone ? stLerp(1, 0.78, activeP) : stLerp(1, 0.42, dimP);
                 const numC = isAct || isDone
-                  ? stRgba(acc, f3(stLerp(bare ? 0.85 : 0.45, isAct ? 1 : 0.75, activeP)))
-                  : ink(f3(stLerp(0.45, 0.28, dimP)), f3(stLerp(0.85, 0.6, dimP)));
+                  ? stRgba(acc, f3(stLerp(0.45, isAct ? 1 : 0.75, activeP)))
+                  : ink(f3(stLerp(0.45, 0.28, dimP)));
                 const ph = t > focusAt + 0.3 ? ((t - focusAt - 0.3) / 1.3) % 1 : -1;
                 const tg = stBack(stProg(t, focusAt + 0.3, 0.35));
                 return (
@@ -397,7 +389,7 @@ const anchorFix: CSSProperties = !onStage && side === "right" ? { transformOrigi
                       <div
                         style={{
                           ...abs, inset: 0, borderRadius: 14, transformOrigin: "0 50%", transform: `scaleX(${f4(activeP)})`, opacity: f3(activeP),
-                          background: `linear-gradient(90deg, ${stRgba(acc, bare ? 0.34 : 0.22)}, ${stRgba(acc, bare ? 0.08 : 0.04)})`,
+                          background: `linear-gradient(90deg, ${stRgba(acc, 0.22)}, ${stRgba(acc, 0.04)})`,
                         }}
                       />
                     )}
@@ -412,7 +404,7 @@ const anchorFix: CSSProperties = !onStage && side === "right" ? { transformOrigi
                     <div
                       style={{
                         ...abs, left: 26, top: rh / 2 - 11, width: 22, height: 22, borderRadius: "50%", boxSizing: "border-box",
-                        border: `2px solid ${fillP > 0.01 ? stRgba(acc, f3(stLerp(0.45, 1, fillP))) : ink(0.45, 0.85)}`,
+                        border: `2px solid ${fillP > 0.01 ? stRgba(acc, f3(stLerp(0.45, 1, fillP))) : ink(0.45)}`,
                         background: nodeFill(fillP), transform: `scale(${f4(nodePop)})`,
                       }}
                     />
@@ -457,8 +449,6 @@ const anchorFix: CSSProperties = !onStage && side === "right" ? { transformOrigi
   );
 }
 
-/** 公开版:直接用精修版动效(完整版里是醒目开垫底板时才换上) */
-const StepTimeline = StepTimelinePlate;
 
 export const stepTimelineDef: EffectDef<StepTimelineParams> = {
   id: "step-timeline",

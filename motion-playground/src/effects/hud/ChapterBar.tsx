@@ -31,7 +31,6 @@ export interface ChapterBarParams {
  * 当前章节高亮 + 章内进度线,讲到哪一章观众随时知道。
  * 用法:一张卡从 0 拉到视频结尾,章节表按你的稿子分段填。
  */
-/** 公开版:直接用精修版动效(完整版里是醒目开垫底板时才换上) */
 const ChapterBar = ChapterBarPlate;
 
 export const chapterBarDef: EffectDef<ChapterBarParams> = {
