@@ -1,0 +1,10 @@
+{
+  "appId": "overlay-studio",
+  "installState": "installed",
+  "launchMode": "packaged",
+  "source": {
+    "kind": "github",
+    "url": "https://github.com/jeszhou/overlay-studio"
+  },
+  "updatedAt": "2026-10-22T22:25:00.000+08:00"
+}

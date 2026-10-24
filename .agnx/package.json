@@ -1,0 +1,21 @@
+{
+  "name": "@agnx-sub/overlay-studio",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Agnx 外置子应用胶水：overlay-studio（Vite dev server Guest 嵌入，源码公开许可上游）",
+  "main": "dist/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "build": "../upstream/motion-playground/node_modules/.bin/esbuild src/index.ts --bundle --platform=neutral --format=cjs --jsx=automatic --outfile=dist/index.js --external:@agnx-lab/app-sdk --external:react --external:react/jsx-runtime",
+    "smoke": "node tools/smoke-page.mjs --port 8131 --out logs/overlay-studio-page.png"
+  },
+  "peerDependencies": {
+    "@agnx-lab/app-sdk": "*",
+    "react": "*"
+  },
+  "peerDependenciesMeta": {
+    "@agnx-lab/app-sdk": {
+      "optional": true
+    }
+  }
+}
